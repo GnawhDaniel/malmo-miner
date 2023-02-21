@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<Mission xmlns="http://ProjectMalmo.microsoft.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+    <About>
+    <Summary>Hello world!</Summary>
+    </About>
+    
+    <ServerSection>
+    <ServerHandlers>
+        <DefaultWorldGenerator/>
+        <ServerQuitFromTimeUp/>
+        <ServerQuitWhenAnyAgentFinishes/>
+    </ServerHandlers>
+    </ServerSection>
+    
+    <AgentSection mode="Survival">
+    <Name>MalmoTutorialBot</Name>
+    <AgentStart>
+        <Placement x="0.5" y="70.0" z="0.5"/>
+    </AgentStart>
+    <AgentHandlers>
+        <ObservationFromFullStats/>                  <ContinuousMovementCommands turnSpeedDegs="180"/>
+        <ObservationFromGrid>
+        <Grid name="state_space_box">
+            <min x="-1" y="-1" z="-1"/>
+            <max x="1" y="2" z="1"/>
+        </Grid>
+        </ObservationFromGrid>
+    </AgentHandlers>
+    </AgentSection>
+</Mission>

@@ -18,13 +18,13 @@ from __future__ import print_function
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # ------------------------------------------------------------------------------------------------
 
+# Tutorial sample #1: Run simple mission
+
 from builtins import range
 import MalmoPython
 import os
 import sys
 import time
-import json
-import helper
 
 if sys.version_info[0] == 2:
     sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)  # flush print output immediately
@@ -32,43 +32,6 @@ else:
     import functools
     print = functools.partial(print, flush=True)
 
-# More interesting generator string: "3;7,44*49,73,35:1,159:4,95:13,35:13,159:11,95:10,159:14,159:6,35:6,95:6;12;"
-
-missionXML='''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
-            <Mission xmlns="http://ProjectMalmo.microsoft.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-            
-              <About>
-                <Summary>Hello world!</Summary>
-              </About>
-              
-              <ServerSection>
-                <ServerHandlers>
-                  <DefaultWorldGenerator/>
-                  <DrawingDecorator>
-                  </DrawingDecorator>
-                  <ServerQuitFromTimeUp timeLimitMs="5000"/>
-                  <ServerQuitWhenAnyAgentFinishes/>
-                </ServerHandlers>
-              </ServerSection>
-              
-              <AgentSection mode="Survival">
-                <Name>MalmoTutorialBot</Name>
-                <AgentStart>
-                  <Placement x="0.5" y="70.0" z="0.5"/>
-                </AgentStart>
-                <AgentHandlers>
-                  <ObservationFromFullStats/>
-                  <ContinuousMovementCommands turnSpeedDegs="180"/>
-                  <ObservationFromGrid>
-                    <Grid name="state_space_box">
-                      <min x="-1" y="-1" z="-1"/>
-                      <max x="1" y="2" z="1"/>
-                    </Grid>
-                  </ObservationFromGrid>
-                </AgentHandlers>
-              </AgentSection>
-            </Mission>'''
-            
 # Create default Malmo objects:
 
 agent_host = MalmoPython.AgentHost()
@@ -82,27 +45,14 @@ if agent_host.receivedArgument("help"):
     print(agent_host.getUsage())
     exit(0)
 
-my_mission = MalmoPython.MissionSpec(missionXML, True)
+my_mission = MalmoPython.MissionSpec()
 my_mission.allowAllAbsoluteMovementCommands()	
-my_mission.drawBlock(0,199,0,"stone")
-my_mission.drawBlock(0,202,0,"stone")
-
-my_mission.drawBlock(1,200,0,"diamond_ore")
-my_mission.drawBlock(1,201,0,"coal_ore")
-
-my_mission.drawBlock(-1,200,0,"iron_ore")
-my_mission.drawBlock(-1,201,0,"iron_block")
-
-my_mission.drawBlock(0,200,1,"pumpkin")
-my_mission.drawBlock(0,201,1,"dirt")
-
-my_mission.drawBlock(0,200,-1,"pumpkin")
-my_mission.drawBlock(0,201,-1,"air")
-
-
-
-
 my_mission_record = MalmoPython.MissionRecordSpec()
+# import random
+# for x in range(1,4):
+#     for z in range(1,13):
+#         if random.random()<0.1:
+#             my_mission.drawBlock( x,45,z,"lava")
 
 # Attempt to start a mission:
 max_retries = 3
@@ -129,19 +79,33 @@ while not world_state.has_mission_begun:
 
 print()
 print("Mission running ", end=' ')
-agent_host.sendCommand("tp 0.5 200 0")
+
+# agent_host.sendCommand("pitch 1")
+# time.sleep(1)
+# for x in range(1100, 1300): 
+#     for z in range(1200, 1300): 
+# import random
+# for x in range(1,4):
+#     for z in range(1,13):
+#         if random.random()<0.1:
+#             my_mission.drawBlock( x,227,z,"lava")
+
+# tp_command = "tp " + str(2)+ " 230 " + str(12)
+# agent_host.sendCommand(tp_command)
+
+agent_host.sendCommand("tp 2 230 12")
+# agent_host.sendCommand("jump 1")
+
 # Loop until mission ends:
 while world_state.is_mission_running:
-    #print(".", end="")
+    print(".", end="")
     time.sleep(0.1)
-    world_state = agent_host.getWorldState()
+    # agent_host.sendCommand("use 1")
+
     for error in world_state.errors:
         print("Error:",error.text)
-    state_space, height = helper.get_grid_observation(world_state, "state_space_box")
-    print(state_space, height)
 
 
 print()
 print("Mission ended")
 # Mission has ended.
-
