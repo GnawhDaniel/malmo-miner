@@ -26,6 +26,7 @@ import time
 import json
 import helper
 
+
 def run():
     if sys.version_info[0] == 2:
         sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)  # flush print output immediately
@@ -38,31 +39,31 @@ def run():
     missionXML='''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
                 <Mission xmlns="http://ProjectMalmo.microsoft.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
             
-                  <About>
-                    <Summary>Hello world!</Summary>
-                  </About>
+                    <About>
+                    <Summary>World data extractor</Summary>
+                    </About>
               
-                  <ServerSection>
+                    <ServerSection>
                     <ServerHandlers>
-                      <DefaultWorldGenerator/>
-                      <ServerQuitWhenAnyAgentFinishes/>
+                        <DefaultWorldGenerator/>
+                        <ServerQuitWhenAnyAgentFinishes/>
                     </ServerHandlers>
-                  </ServerSection>
-                  <AgentSection mode="Creative">
+                    </ServerSection>
+                    <AgentSection mode="Creative">
                     <Name>MalmoTutorialBot</Name>
                     <AgentStart>
                     </AgentStart>
                     <AgentHandlers>
-                      <ObservationFromFullStats/>
-                      <ContinuousMovementCommands turnSpeedDegs="180"/>
-                      <ObservationFromGrid>
+                        <ObservationFromFullStats/>
+                        <ContinuousMovementCommands turnSpeedDegs="180"/>
+                        <ObservationFromGrid>
                         <Grid name="state_space_box">
-                          <min x="-100" y="-1" z="-100"/>
-                          <max x="100" y="0" z="100"/>
+                            <min x="-150" y="-1" z="-150"/>
+                            <max x="150" y="-1" z="150"/>
                         </Grid>
-                      </ObservationFromGrid>
+                        </ObservationFromGrid>
                     </AgentHandlers>
-                  </AgentSection>
+                    </AgentSection>
                 </Mission>'''
             
     #<ServerQuitFromTimeUp timeLimitMs="30000"/>
@@ -150,20 +151,21 @@ def run():
             if (height <= 5):
                 break
 
-
-
     print()
     print("Mission ended")
     # Mission has ended.
 
-    print(starting_height)
-    print(len(terrain_data))
-    print(len(terrain_data[0]))
+    print("Starting height: ", starting_height)
+    print("Layers: ", len(terrain_data))
+    print("Layer size: ", len(terrain_data[0]))
 
+    #validation using textfile
+    '''
     file = open("worldTest.txt", "w")
     for i in terrain_data:
         file.write(str(i))
         file.write('\n')
     file.close()
+    '''
 
-    return terrain_data
+    return terrain_data, starting_height
