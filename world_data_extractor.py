@@ -20,19 +20,29 @@ from __future__ import print_function
 
 from builtins import range
 import MalmoPython
-import os
 import sys
 import time
-import json
 import helper
+import numpy as np
+import pickle as pck
 
+def pickilizer(obj, filename):
+    file = open(filename, 'wb')
+    pck.dump(obj, file)
+    file.close()
+
+def unpickle(filename):
+    file = open(filename, 'r')
+    obj = pck.loads(file)
+    file.close()
+    return obj
 
 def run():
-    if sys.version_info[0] == 2:
-        sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)  # flush print output immediately
-    else:
-        import functools
-        print = functools.partial(print, flush=True)
+    # if sys.version_info[0] == 2:
+    #     sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)  # flush print output immediately
+    # else:
+    #     import functools
+    #     print = functools.partial(print, flush=True)
 
     # More interesting generator string: "3;7,44*49,73,35:1,159:4,95:13,35:13,159:11,95:10,159:14,159:6,35:6,95:6;12;"
 
@@ -142,7 +152,10 @@ def run():
                 starting_height = height
 
             if height not in height_seen:
+                world_data = np.array(world_data)
+                world_data = world_data.reshape((301,301))
                 terrain_data.append(world_data)
+
                 height_seen.add(height)
     
             #print(terrain_data, height)
@@ -150,14 +163,14 @@ def run():
             #end the mission when world extracted
             if (height <= 5):
                 break
-
+    terrain_data = np.array(terrain_data)
     print()
     print("Mission ended")
     # Mission has ended.
 
     print("Starting height: ", starting_height)
-    print("Layers: ", len(terrain_data))
-    print("Layer size: ", len(terrain_data[0]))
+    print("Layers: ", terrain_data.shape)
+    # print("Layer size: ", terrain_data[0].shape)
 
     #validation using textfile
     '''
@@ -167,5 +180,6 @@ def run():
         file.write('\n')
     file.close()
     '''
+    pickilizer(terrain_data, "terrain_data.pck")
 
     return terrain_data, starting_height

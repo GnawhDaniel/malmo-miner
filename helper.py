@@ -13,7 +13,17 @@ def get_grid_observation(world_state, name):
 
     if (world_state.number_of_observations_since_last_state):
         state = world_state.observations[-1].text
-        state = json.load(state)
+        state = json.loads(state)
+
+        a_dict = {
+            "north": [],
+            "east": [],
+            "south": [],
+            "west": [],
+            "top": [],
+            "bottom": []
+        }
+
         return state[name], math.floor(state["YPos"])
         
     return None, None
