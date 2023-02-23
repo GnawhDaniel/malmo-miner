@@ -130,8 +130,12 @@ def run():
 
     agent_host.sendCommand("attack 1")
 
-    height_seen = set();
+    height_seen = set()
     terrain_data = []
+    
+    AIR_BUFFER = 2 
+    for _i in range(AIR_BUFFER):
+        terrain_data.append(np.full((301,301), "air"))
 
     starting_height = None
 
@@ -182,4 +186,4 @@ def run():
     '''
     pickilizer(terrain_data, "terrain_data.pck")
 
-    return terrain_data, starting_height
+    return terrain_data, starting_height + AIR_BUFFER
