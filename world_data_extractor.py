@@ -25,17 +25,8 @@ import time
 import helper
 import numpy as np
 import pickle as pck
+from helper import pickilizer
 
-def pickilizer(obj, filename):
-    file = open(filename, 'wb')
-    pck.dump(obj, file)
-    file.close()
-
-def unpickle(filename):
-    file = open(filename, 'r')
-    obj = pck.loads(file)
-    file.close()
-    return obj
 
 def run():
     # if sys.version_info[0] == 2:
