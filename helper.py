@@ -2,47 +2,28 @@
 Helper functions:
 http://microsoft.github.io/malmo/0.30.0/Documentation/annotated.html
 """
-import MalmoPython as Malmo
-import os
-import sys
-import time
-import json
-import math
 
-def get_grid_observation(world_state, name):
+import pickle as pck
 
-    if (world_state.number_of_observations_since_last_state):
-        state = world_state.observations[-1].text
-        state = json.loads(state)
+REWARD_TABLE = {
+    "diamond_ore": 1000,
+    "emerald_ore": 500,
+    "redstone_ore": 100,
+    "lapis_ore": 100, 
+    "gold_ore": 100,
+    "iron_ore": 10,
+    "coal_ore": 5,
+}
+EXCLUSION = {"air", "lava", "flowing_lava", "water", "flowing_water", "bedrock"}.union(set(REWARD_TABLE.keys()))
+DEATH_VALUE = -1000
 
-        a_dict = {
-            "north": [],
-            "east": [],
-            "south": [],
-            "west": [],
-            "top": [],
-            "bottom": []
-        }
+def pickilizer(obj, filename):
+    file = open(filename, 'wb')
+    pck.dump(obj, file)
+    file.close()
 
-        return state[name], math.floor(state["YPos"])
-        
-    return None, None
-
-
-def get_state_space(mission_spec, agent_host):
-    # Find the doc for getting blocks around player
-    
-    return
-
-def rotate_agent(degrees, agent_host):
-    return
-
-def pitch_agent(degrees, agent_host):
-    return
-
-def teleport(direction, agent_host):    
-    return
-
-def mine_forward(direction, agent_host, up = False):
-    return
-
+def unpickle(filename):
+    file = open(filename, 'rb')
+    obj = pck.load(file)
+    file.close()
+    return obj
