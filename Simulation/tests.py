@@ -1,4 +1,4 @@
-from Simulation.simulation import Simulation
+from simulation import Simulation
 import numpy as np
 from helper import pickilizer, unpickle, REWARD_TABLE, EXCLUSION
 

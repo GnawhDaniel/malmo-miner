@@ -24,12 +24,14 @@ This is to test state space in Malmo. Not the simulated game.
 """
 
 from builtins import range
+
+sys.path.append('../') # Add this to import MalmoPython
 import MalmoPython
+
 import os
 import sys
 import time
 import json
-import helper
 
 if sys.version_info[0] == 2:
     sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)  # flush print output immediately
@@ -142,8 +144,8 @@ while world_state.is_mission_running:
     world_state = agent_host.getWorldState()
     for error in world_state.errors:
         print("Error:",error.text)
-    state_space, height = helper.get_grid_observation(world_state, "state_space_box")
-    print(state_space, height)
+    # state_space, height = helper.get_grid_observation(world_state, "state_space_box")
+    # print(state_space, height)
 
 
 print()
