@@ -364,7 +364,7 @@ class Simulation:
             if (any(self.at(x, y - 1, z) == i for i in fall_through)):
                 self.agent.height -= 1
                 y = starting_height - self.agent.height
-                if (agent_death()):
+                if (self.agent_death()):
                     return True
             else: #or hits bottom of the world
                 break
@@ -381,10 +381,14 @@ class Simulation:
 
 
 if __name__ == "__main__":
-    terrain_data = unpickle("terrain_data.pck")
-    starting_height = 70 # TODO: Change later to proper starting height using terrain_data.pck
+    # terrain_data = unpickle("terrain_data.pck")
+    # starting_height = 70 # TODO: Change later to proper starting height using terrain_data.pck
     
-    # Pre-process: convert unimportant blocks to stone
-    all_blocks = set(np.unique(terrain_data))
-    for i in all_blocks - EXCLUSION:
-        terrain_data[terrain_data==i] = "stone"
+    # # Pre-process: convert unimportant blocks to stone
+    # all_blocks = set(np.unique(terrain_data))
+    # for i in all_blocks - EXCLUSION:
+    #     terrain_data[terrain_data==i] = "stone"
+
+    # Smaller Scale World
+    # 3 layers air, 5 layers stone, 1 layer gold, 5 layers stone, 1 layer diamond, and 5 layers stones
+    pass
