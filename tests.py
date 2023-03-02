@@ -96,6 +96,31 @@ class TestAirBlock:
         assert (test.get_current_state()==('stone', 'stone', 'stone', 'air+diamond_ore', 'stone', 'stone', 'stone', 'stone', 'stone', 'stone', 50)), test.get_current_state()
 
 
+    def test_air_block5(self):
+        test = Simulation(terrain_data, starting_height=50)
+        test.terrain_data[51, 150+1, 150] = 'air'
+        test.terrain_data[52, 150+2, 150] = "diamond_ore" # Diamond ore on ceiling
+        test.terrain_data[50, 150+2, 150] = "coal_ore"
+        test.terrain_data[51, 150+2, 150] = 'air'
+        test.terrain_data[51, 150+3, 150] = 'air'
+        test.terrain_data[51, 150+4, 150] = 'air'
+        test.terrain_data[51, 150+5, 150] = 'stone'
+        assert (test.get_current_state()==('stone', 'stone', 'stone', 'air+diamond_ore', 'stone', 'stone', 'stone', 'stone', 'stone', 'stone', 50)), test.get_current_state()
+
+        
+    def test_air_block6(self):
+        test = Simulation(terrain_data, starting_height=50)
+        test.terrain_data[51, 150+1, 150] = 'air'
+        test.terrain_data[52, 150+2, 150] = "emerald_ore"
+        test.terrain_data[50, 150+2, 150] = "coal_ore"
+        test.terrain_data[50, 150+4, 150] = "diamond_ore"
+        test.terrain_data[51, 150+2, 150] = 'air'
+        test.terrain_data[51, 150+3, 150] = 'air'
+        test.terrain_data[51, 150+4, 150] = 'air'
+        test.terrain_data[51, 150+5, 150] = 'stone'
+        assert (test.get_current_state()==('stone', 'stone', 'stone', 'air+diamond_ore', 'stone', 'stone', 'stone', 'stone', 'stone', 'stone', 50)), test.get_current_state()
+
+
 
 
     
