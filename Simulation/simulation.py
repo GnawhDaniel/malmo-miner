@@ -177,8 +177,6 @@ class Simulation:
             state_space.append(lower) # Lower
             state_space.append(upper) # Upper
         
-        state_space.append(self.at(x, y - 1, z))   # below feet
-        
         above = self.at(x, y + 2, z)               #above head
         if above == "air":                              
             max_block = self.recursive_search(coord, (0, 1, 0), r_distance)
@@ -187,6 +185,7 @@ class Simulation:
                 lower += "+" + max_block  
                 
         state_space.append(above)   
+        state_space.append(self.at(x, y - 1, z))   # below feet
         state_space.append(self.agent.height)
         
     
