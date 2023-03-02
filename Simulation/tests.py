@@ -1,12 +1,10 @@
-from simulation import Simulation
-import pickle as pck
+from Simulation.simulation import Simulation
 import numpy as np
 from helper import pickilizer, unpickle, REWARD_TABLE, EXCLUSION
 
 """
-!!!
-Use "pytest ./tests.py" in command line.
-!!!
+1. Navigate to Simulation directory.
+2. To run tests type "pytest ./tests.py" in command line.
 """
 
 terrain_data = unpickle("terrain_data.pck")

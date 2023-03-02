@@ -19,8 +19,11 @@ from __future__ import print_function
 # ------------------------------------------------------------------------------------------------
 
 from builtins import range
-import MalmoPython
 import sys
+
+sys.path.append('../') # Add this to import MalmoPython
+import MalmoPython
+
 import time
 import helper
 import numpy as np
