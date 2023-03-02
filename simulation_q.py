@@ -74,7 +74,7 @@ class Agent:
         for i in range(len(state) - 1):
             if not state[i].startswith('air'):
                 moves.append(M[i])
-
+        print(moves)
         return moves
 
 
@@ -288,6 +288,7 @@ class Simulation:
             coord = map(add, self.agent_xyz(), coords[block])
             #change3
             temp = [i for i in coord]
+            #print(action,temp)
             # Unpack tuple and mine the block out
             self.mine(*temp)
             block_mined = self.at(*temp)
@@ -334,7 +335,7 @@ class Simulation:
             # change1
             #print("test1",relative_coord)
             if self.agent_move(*relative_coord):  # if died
-                print("test2")
+                #print("test2")
                 return DEATH_VALUE, True
 
             # otherwise return
@@ -360,29 +361,36 @@ class Simulation:
 
     def agent_move(self, x, y, z):
         #print("cord1", self.agent.x, self.agent.height, self.agent.z)
+        #print("d",x,y,z)
         self.agent.x += x
         self.agent.height += y
         self.agent.x += z
         #print("cord2", self.agent.x, self.agent.height, self.agent.z)
+        #print(self.get_current_state())
 
         #change
         return self.fall()
 
     def fall(self):
+
         # 1 point (half a heart) for each block of fall distance after the third
         x, y, z = self.agent_xyz()
-        print(x,y,z)
+        #print(x,y,z)
         fall_through = ["air", "lava", "flowing_lava", "water", "flowing_water"]
 
         while (True):
             #change to y+1
-            if (any(self.at(x, y +1, z) == i for i in fall_through)):
+            #print("testing",self.at(x, y +2, z))
+            if (self.at(x, y +2, z) in fall_through):
+                import time
+                time.sleep(2)
+                print("fall")
                 #change to height +=1
                 self.agent.height += 1
-                print("fall",self.get_current_state())
-                y = starting_height - self.agent.height
-                if (self.agent_death()):
-                    return True
+                #CHANGE
+                #y = starting_height - self.agent.height
+                #if (self.agent_death()):
+                    #return True
             else:  # or hits bottom of the world
                 break
 
@@ -435,8 +443,8 @@ if __name__ == "__main__":
             """
             consider pass state as a parameter to the choose move to reduce run time
             """
-            action = "N"#s.choose_move(epsilon,state)
-            print(action)
+            action = s.choose_move(epsilon,state)
+            print("action is",action)
 
             #action
             """
@@ -448,7 +456,6 @@ if __name__ == "__main__":
 
             #get new state
             new_state = s.get_current_state()
-            print("new_state",new_state)
             #update q table
             index = move.index(action)
 
