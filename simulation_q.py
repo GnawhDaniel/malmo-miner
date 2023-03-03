@@ -507,6 +507,9 @@ if __name__ == "__main__":
 
         state = s.get_current_state()
 
+        #Every 100th, show best policy
+        ep = epsilon if i % 100 else 0
+
         d = 0                         #track if death in epsidoe
         while steps > 0:
            
@@ -515,7 +518,8 @@ if __name__ == "__main__":
             """
             consider pass state as a parameter to the choose move to reduce run time
             """
-            action = s.choose_move(epsilon,state, q_table)
+
+            action = s.choose_move(ep, state, q_table)
             #print("action is",action)
 
             #action
@@ -571,9 +575,10 @@ if __name__ == "__main__":
             print("Episode:", i)
             print("\tQ_TABLE:", len(q_table))
             print("\tAverage diamonds mined:", diamond_sum / 100)
+            print("\tBest policy: ", diamonds_mined) 
 
             # episode, q_table, avg_diamonds
-            file.write(f"{i}, {len(q_table)}, {diamond_sum / 100}\n")
+            file.write(f"{i}, {len(q_table)}, {diamond_sum / 100}, {diamonds_mined}\n")
 
             #print("\tQ_TABLE:", len(q_table))
             diamond_sum = 0
