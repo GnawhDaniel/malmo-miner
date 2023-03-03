@@ -1,13 +1,15 @@
 import numpy as np
-import world_data_extractor
+#import world_data_extractor
 import random, copy
 from helper import pickilizer, unpickle
 from operator import add
 import helper
 
+#from simulation import Agent, Simulation
+
 
 #
-starting_height = 70  # CHANGE LATER
+starting_height = 70  # TODO: CHANGE LATER
 
 # CONSTANTS
 REWARD_TABLE = helper.REWARD_TABLE
@@ -25,9 +27,6 @@ class Agent:
     def __init__(self, x, y, z) -> None:
         self.x, self.height, self.z = x, y, z
 
-        from collections import defaultdict
-        self.q_table = {}
-
         self.inventory = defaultdict(int)
 
     def move(self, direction):
@@ -40,7 +39,7 @@ class Agent:
         elif direction == "E":
             self.x += 1
         elif direction == "W":
-            self.z -= 1
+            self.x -= 1
         elif direction == "U":
             self.height += 1
 
@@ -72,12 +71,10 @@ class Agent:
         # (NL, NU, EL, EU, SL, SU, WL, WU, U, D, height)
         M = ["M_NL", "M_NU", "M_EL", "M_EU", "M_SL", "M_SU", "M_WL", "M_WU", "M_U", "M_D"]
         for i in range(len(state) - 1):
-            if not state[i].startswith('air'):
+            if not state[i].startswith('air') and state[i] != "bedrock":
                 moves.append(M[i])
-        print(moves)
+        #print(moves)
         return moves
-
-
 
 
 class Simulation:
@@ -87,8 +84,9 @@ class Simulation:
 
         self.agent_mined = set()
         self.agent_placed = set()
+        self.diamonds_mined = 0
 
-        self.agent = Agent(int(terrain_data.shape[1] / 2), starting_height, int(terrain_data.shape[2] / 2))
+        self.agent = Agent(int(terrain_data.shape[1] / 2), starting_height - 2, int(terrain_data.shape[2] / 2))
 
     def run(self):
         self.fall()  # make agent touch the ground
@@ -101,13 +99,13 @@ class Simulation:
         Returns: True if in bounds
         """
         world_shape = self.terrain_data.shape  # (y, x, z)
-        if x < 0 or x > world_shape[1]:
+        if x < 0 or x > world_shape[1] - 1:
             return False
-        if z < 0 or z > world_shape[2]:
+        if z < 0 or z > world_shape[2] - 1:
             return False
-        if y < 5 or y > starting_height:
+        if y < 0 or y > starting_height:
             return False
-
+    
         return True
 
     def at(self, x, y, z):
@@ -120,21 +118,27 @@ class Simulation:
         return self.terrain_data[y, x, z]
 
     def agent_xyz(self):
-        # starting_height - self.agent.height
+        # starting_height - self.agent.heightcle
         return self.agent.x, self.agent.height, self.agent.z
+    
     #change4
-    def choose_move(self, epsilon,state):
+    def choose_move(self, epsilon, state, q_table):
         possible_moves = self.agent.get_possible_moves(state)
-        if (random.random() < epsilon or state not in self.agent.q_table.keys()):
-            return  possible_moves[random.randint(0, len(possible_moves) - 1)]
+        #EPSILON
+        if (random.random() < epsilon or state not in q_table.keys()):
+            return possible_moves[random.randint(0, len(possible_moves) - 1)]
         else:
             """
             careful when add new move as the index will be wrong
             """
             move = ["N", "S", "W", "E", "U", "M_NL", "M_NU", "M_EL", "M_EU", "M_SL", "M_SU", "M_WL", "M_WU", "M_U",
-                    "M_D"]
-            max_q_value = max(self.agent.q_table[state])
-            best_move = [move[i] for i, x in enumerate(self.agent.q_table[state]) if x == max_q_value]
+                    "M_D"]  
+            
+            
+            table_of_possible = [(move[i], x) for i, x in enumerate(q_table[state]) if move[i] in possible_moves]
+            max_q_value = max([i[1] for i in table_of_possible])
+            best_move = [i[0] for i in table_of_possible if i[1] == max_q_value]
+            
             return random.choice(best_move)
         # best move given q function
         # add reward?
@@ -159,40 +163,64 @@ class Simulation:
         # Searching Range
         r_distance = 5
 
+
+        #NESW
         for d in dir:
-            lower = self.at(x + d[0], y, z + d[1])
-            upper = self.at(x + d[0], y + 1, z + d[1])
-            # ('air+diamond_ore', 'stone', 'stone', 'stone', 'stone', 'stone', 'stone', 'stone', 'stone', 'stone', 50))
+            lower_coord = (x + d[0], y , z + d[1])
+            if not self.boundary_check(*lower_coord):
+                state_space.append("bedrock")  # Lower
+            else:
+                lower = self.at(*lower_coord)
+                search_direction = (d[0], 0, d[1])
 
-            search_direction = (d[0], 0, d[1])
+                if lower == "air":  # lower
+                    # coord = (x + d[0], y, z + d[1])
+                    max_block = self.recursive_search(lower_coord, search_direction, r_distance)
 
-            if lower == "air":  # lower
-                coord = (x + d[0], y, z + d[1])
-                max_block = self.recursive_search(coord, search_direction, r_distance)
+                    if max_block in REWARD_TABLE:
+                        lower += "+" + max_block
+                
+                state_space.append(lower)  # Lower
+
+
+            upper_coord = (x + d[0], y + 1 , z + d[1])
+            #print(upper_coord)
+            if not self.boundary_check(*upper_coord):
+                state_space.append("bedrock")
+            else:
+                upper = self.at(x + d[0], y + 1, z + d[1])
+
+                if upper == "air":  # upper
+                    # coord = (x + d[0], y + 1, z + d[1])
+                    max_block = self.recursive_search(upper_coord, search_direction, r_distance)
+
+                    if max_block in REWARD_TABLE:
+                        upper += "+" + max_block
+
+                state_space.append(upper)  # Upper
+
+        
+        #ABOVE
+        if not self.boundary_check(x, y + 2, z):
+            state_space.append("bedrock")
+        else:  
+            above = self.at(x, y + 2, z)  # above head
+            if above == "air":
+                max_block = self.recursive_search((x, y + 2, z), (0, 1, 0), r_distance)
 
                 if max_block in REWARD_TABLE:
                     lower += "+" + max_block
 
-            if upper == "air":  # upper
-                coord = (x + d[0], y + 1, z + d[1])
-                max_block = self.recursive_search(coord, search_direction, r_distance)
+            state_space.append(above)   
 
-                if max_block in REWARD_TABLE:
-                    upper += "+" + max_block
 
-            state_space.append(lower)  # Lower
-            state_space.append(upper)  # Upper
-
-        state_space.append(self.at(x, y - 1, z))  # below feet
-
-        above = self.at(x, y + 2, z)  # above head
-        if above == "air":
-            max_block = self.recursive_search(coord, (0, 1, 0), r_distance)
-
-            if max_block in REWARD_TABLE:
-                lower += "+" + max_block
-
-        state_space.append(above)
+        #BELOW
+        if not self.boundary_check(x, y - 1, z):
+            state_space.append("bedrock")
+        else:
+            state_space.append(self.at(x, y - 1, z))   # below feet
+        
+        #HEIGHT
         state_space.append(self.agent.height)
 
         return tuple(state_space)
@@ -206,14 +234,13 @@ class Simulation:
         coordinate = tuple(coordinate)
         # base cases:
         # Search depth exceeded
-
+        # print(coordinate)
         if search_depth <= 0:
             return "air"
         # coordinate to search out of bounds
         elif not self.boundary_check(coordinate[0], coordinate[1], coordinate[2]):
             return "air"
         # block to search is not air
-
         elif self.at(coordinate[0], coordinate[1], coordinate[2]) != 'air':
             return "air"
 
@@ -263,7 +290,7 @@ class Simulation:
 
         return max_local
 
-    def getReward(self, state, action):
+    def get_reward(self, state, action):
         """
         Returns: int: 'reward', bool: 'death'
         """
@@ -290,9 +317,10 @@ class Simulation:
             temp = [i for i in coord]
             #print(action,temp)
             # Unpack tuple and mine the block out
-            self.mine(*temp)
+            
             block_mined = self.at(*temp)
             self.agent.inventory[block_mined] += 1
+            self.mine(*temp)
 
             reward = 0
             dead = False
@@ -300,10 +328,19 @@ class Simulation:
             if block in REWARD_TABLE:
                 reward = REWARD_TABLE[block_mined]
 
+            if block == "diamond_ore":
+                self.diamonds_mined += 1
+
             # IF lava in the state space and doesn't move
             if (any(map(lambda x: x == "lava" or x == "flowing_lava", state))):
-                reward += DEATH_VALUE
                 dead = True
+
+            #or falling
+            died_falling = self.fall()
+            dead = dead or died_falling
+
+            if dead:
+                reward += DEATH_VALUE
 
             # return the reward for mining the block
             return reward, dead
@@ -324,11 +361,9 @@ class Simulation:
             # If up, place block under
             if action == "U":
                 #change2
-                t1 = self.agent_xyz()
-                t2 = relative_coord
-                new_coord = tuple(t1[i]-t2[i] for i in range(len(t1)))
-                if self.at(*new_coord) == 'air' or self.is_mined(*new_coord):
-                    self.place_block(*new_coord)
+                c = self.agent_xyz()
+                if self.at(*c) == 'air' or self.is_mined(*c):
+                    self.place_block(*c)
 
             # Move the agent, return if died or not
             #print(coords[M.index(action)])
@@ -369,24 +404,32 @@ class Simulation:
         #print(self.get_current_state())
 
         #change
-        return self.fall()
+        return self.fall() #falls, whether it died
 
     def fall(self):
-
         # 1 point (half a heart) for each block of fall distance after the third
         x, y, z = self.agent_xyz()
         #print(x,y,z)
         fall_through = ["air", "lava", "flowing_lava", "water", "flowing_water"]
-
+        #
+        
         while (True):
+            x, y, z = self.agent_xyz()
+
             #change to y+1
             #print("testing",self.at(x, y +2, z))
-            if (self.at(x, y +2, z) in fall_through):
-                import time
-                time.sleep(2)
-                print("fall")
+
+            #hit bottom of world
+            if not self.boundary_check(x, y - 1, z):
+                break
+            
+            
+            if (self.at(x, y - 1, z) in fall_through):
+                # import time
+                # time.sleep(0.5)
+                #print("fall: block under: ", self.at(x, y - 1, z))
                 #change to height +=1
-                self.agent.height += 1
+                self.agent.height -= 1
                 #CHANGE
                 #y = starting_height - self.agent.height
                 #if (self.agent_death()):
@@ -415,42 +458,74 @@ if __name__ == "__main__":
 
     # Smaller Scale World
     # 3 layers air, 5 layers stone, 1 layer gold, 5 layers stone, 1 layer diamond, and 5 layers stones
-    num_epi = 1000
+    num_epi = 100000
     max_step = 200
     moving_penatly = 1
     mining_penatly = 2
 
+    MINING_REWARD = 0
+    MOVING_REWARD = -10
+
     lr = 0.1                #learning rate
-    discount_rate = 0.99
+    discount_rate = 0.99 
     epsilon = 0.2
 
 
-    reward_track =[]        #store reward for each epsiode
+    reward_track = []        #store reward for each epsiode
 
     #
-    terrain_data = helper.create_custom_world(50, 50, [(3, "air"), (30, "stone"),(30,"diamond_ore")])
-    starting_height = 1
-    s = Simulation(terrain_data,starting_height)
+    terrain_data, terrain_height = helper.create_custom_world(50, 50, [(3, "air"), (5, "stone") ,(2,"diamond_ore")])
+    
+
+    """
+    AIR 0
+    AIR
+    AIR 2
+    STONE
+    """
+    starting_height = terrain_height - 1
+
+    file = open("results.txt", 'w')
+    
     move= ["N","S","W","E","U","M_NL", "M_NU", "M_EL", "M_EU", "M_SL", "M_SU", "M_WL", "M_WU", "M_U", "M_D"]
+
+    # print("AGENT START:", s.agent_xyz())
+    # print(len(s.agent_placed))
+    # print(len(s.agent_mined))
+
+    import time
+
+    from collections import defaultdict
+    q_table = {}
+
+
+    diamond_sum  = 0
     for i in range(num_epi):
+        s = Simulation(terrain_data,starting_height)
+
         steps = max_step
 
         state = s.get_current_state()
 
         d = 0                         #track if death in epsidoe
         while steps > 0:
-            print("state", state,"step",steps)
+           
+            # time.sleep(1.5)
+            #print("state", state,"step",steps)
             """
             consider pass state as a parameter to the choose move to reduce run time
             """
-            action = s.choose_move(epsilon,state)
-            print("action is",action)
+            action = s.choose_move(epsilon,state, q_table)
+            #print("action is",action)
 
             #action
             """
             I assume getReward call the function to "change the map" or move the agent
             """
-            reward, d = s.getReward(state, action)
+            reward, d = s.get_reward(state, action)
+
+            if not action.startswith('M_'):
+                reward += MOVING_REWARD
 
             steps = steps - mining_penatly if action.startswith('M_') else steps - moving_penatly
 
@@ -459,17 +534,17 @@ if __name__ == "__main__":
             #update q table
             index = move.index(action)
 
-            if new_state not in s.agent.q_table.keys():
-                s.agent.q_table[new_state] = [0 for i in range(len(move))]
+            if new_state not in q_table.keys():
+                q_table[new_state] = [0 for i in range(len(move))]
 
-            if state in s.agent.q_table.keys():
+            if state in q_table.keys():
                 """
                 check equation right or not
                 """
-                s.agent.q_table[state][index] = (1-lr) * s.agent.q_table[state][index] + lr * (reward + discount_rate*max(s.agent.q_table[new_state]))
+                q_table[state][index] = (1-lr) * q_table[state][index] + lr * (reward + discount_rate*max(q_table[new_state]))
             else:
-                s.agent.q_table[state] = [0 for i in range(len(move))]
-                s.agent.q_table[state][index] = lr * (reward + discount_rate * max(s.agent.q_table[new_state]))
+                q_table[state] = [0 for _ in range(len(move))]
+                q_table[state][index] = lr * (reward + discount_rate * max(q_table[new_state]))
 
 
             state = new_state
@@ -480,22 +555,28 @@ if __name__ == "__main__":
 
         total_reward = 0
 
+        #print(s.agent.inventory)
+        diamonds_mined = s.agent.inventory["diamond_ore"]
+
+        diamond_sum += diamonds_mined
+
         while s.agent.inventory:
             k,v = s.agent.inventory.popitem()
             if k in REWARD_TABLE.keys():
-                total_reward += REWARD_TABLE[i]*v
+                total_reward += REWARD_TABLE[k]*v
 
         reward_track.append(total_reward)
 
-        """
-        
-        """
-        s.agent_mined = set()
-        s.agent_placed = set()
-        s.agent.x = int(terrain_data.shape[1] / 2)
-        s.agent.height = starting_height
-        s.agent.z= int(terrain_data.shape[2] / 2)
+        if i % 100 == 0 and i != 0:
+            print("Episode:", i)
+            print("\tQ_TABLE:", len(q_table))
+            print("\tAverage diamonds mined:", diamond_sum / 100)
+
+            # episode, q_table, avg_diamonds
+            file.write(f"{i}, {len(q_table)}, {diamond_sum / 100}\n")
+
+            #print("\tQ_TABLE:", len(q_table))
+            diamond_sum = 0
 
 
-
-
+    file.close()

@@ -40,7 +40,7 @@ def create_custom_world(width, length, layers):
     """
 
     world = np.array([])
-
+    layers.reverse()    
     total_y_length = 0
     for layer in layers:
         n = np.full(shape=(layer[0], width, length), fill_value=layer[1])
@@ -48,6 +48,8 @@ def create_custom_world(width, length, layers):
         world = np.append(world, n)
 
     world = np.reshape(world, (total_y_length, width, length))
-    print(world)
 
-    return world
+    print("WORLD SHAPE!!:", world.shape)
+    #print(world)
+
+    return world, total_y_length
