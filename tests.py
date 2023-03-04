@@ -19,12 +19,12 @@ class TestStateSpace:
     def test_case_state_space1(self):
         # Testing Simulation.get_current_state
         test = Simulation(terrain_data, starting_height=50) # Returned ('stone', 'stone', 'stone', 'stone', 'stone', 'stone', 'stone', 'stone', 'stone', 'stone', 50)
-    
         # Replace two blocks north of agent w/ Air:
         # Expect: ('air', 'air', 'stone', 'stone', 'stone', 'stone', 'stone', 'stone', 'stone', 'stone', 50)
         test.terrain_data[50, 150, 150-1] = "diamond_ore"
         test.terrain_data[51, 150, 150-1] = "diamond_ore"
-        assert (test.get_current_state()==("diamond_ore", "diamond_ore", 'stone', 'stone', 'stone', 'stone', 'stone', 'stone', 'stone', 'stone', 50)), test.get_current_state()
+        print(test.get_current_state())
+        assert (test.get_current_state()==("diamond_ore", "diamond_ore", 'stone', 'stone', 'stone', 'stone', 'stone', 'stone', 'stone', 50)), test.get_current_state()
 
     def test_case_state_space2(self):
         # Replace two blocks East of agent w/ Air:
@@ -32,7 +32,7 @@ class TestStateSpace:
 
         test.terrain_data[50, 150+1, 150] = "diamond_ore"
         test.terrain_data[51, 150+1, 150] = "diamond_ore"
-        assert (test.get_current_state()==('stone', 'stone', "diamond_ore", "diamond_ore", 'stone', 'stone', 'stone', 'stone', 'stone', 'stone', 50))
+        assert (test.get_current_state()==('stone', 'stone', "diamond_ore", "diamond_ore", 'stone', 'stone', 'stone', 'stone', 'stone', 50))
     
     def test_case_state_space3(self):
         # Replace two blocks South of agent w/ Air:
@@ -40,7 +40,7 @@ class TestStateSpace:
 
         test.terrain_data[50, 150, 150+1] = "diamond_ore"
         test.terrain_data[51, 150, 150+1] = "diamond_ore"
-        assert (test.get_current_state()==('stone', 'stone', 'stone', 'stone', 'diamond_ore', 'diamond_ore', 'stone', 'stone', 'stone', 'stone', 50))
+        assert (test.get_current_state()==('stone', 'stone', 'stone', 'stone', 'diamond_ore', 'diamond_ore', 'stone', 'stone', 'stone', 50))
 
     def test_case_state_space4(self):
         # Replace two blocks West of agent w/ Air:
@@ -48,7 +48,7 @@ class TestStateSpace:
 
         test.terrain_data[50, 150-1, 150] = "diamond_ore"
         test.terrain_data[51, 150-1, 150] = "diamond_ore"
-        assert (test.get_current_state()==('stone', 'stone', 'stone', 'stone', 'stone', 'stone', 'diamond_ore', 'diamond_ore', 'stone', 'stone', 50))
+        assert (test.get_current_state()==('stone', 'stone', 'stone', 'stone', 'stone', 'stone', 'diamond_ore', 'diamond_ore', 'stone', 50))
 
 
 class TestAirBlock:
@@ -57,7 +57,7 @@ class TestAirBlock:
         test = Simulation(terrain_data, starting_height=50) 
         test.terrain_data[50, 150, 150-1] = 'air'
         test.terrain_data[50, 150, 150-2] = 'diamond_ore'
-        assert (test.get_current_state()==('air+diamond_ore', 'stone', 'stone', 'stone', 'stone', 'stone', 'stone', 'stone', 'stone', 'stone', 50)), test.get_current_state()
+        assert (test.get_current_state()==('air+diamond_ore', 'stone', 'stone', 'stone', 'stone', 'stone', 'stone', 'stone', 'stone', 50)), test.get_current_state()
 
     def test_air_block2(self):
         # Search Length = 2
@@ -65,7 +65,7 @@ class TestAirBlock:
         test.terrain_data[50, 150, 150-1] = 'air'
         test.terrain_data[50, 150, 150-2] = 'air'
         test.terrain_data[50, 150, 150-3] = 'diamond_ore' # Diamond at the end (lower level)
-        assert (test.get_current_state()==('air+diamond_ore', 'stone', 'stone', 'stone', 'stone', 'stone', 'stone', 'stone', 'stone', 'stone', 50)), test.get_current_state()
+        assert (test.get_current_state()==('air+diamond_ore', 'stone', 'stone', 'stone', 'stone', 'stone', 'stone', 'stone', 'stone', 50)), test.get_current_state()
     
     def test_air_block3(self):
         """
@@ -81,7 +81,7 @@ class TestAirBlock:
         test.terrain_data[51, 150+4, 150] = 'air'
         test.terrain_data[51, 150+5, 150] = 'diamond_ore' # Diamond at the end of search length (eye level)
         print(test.get_current_state())
-        assert (test.get_current_state()==('stone', 'stone', 'stone', 'air+diamond_ore', 'stone', 'stone', 'stone', 'stone', 'stone', 'stone', 50)), test.get_current_state()
+        assert (test.get_current_state()==('stone', 'stone', 'stone', 'air+diamond_ore', 'stone', 'stone', 'stone', 'stone', 'stone', 50)), test.get_current_state()
 
     def test_air_block4(self):
         test = Simulation(terrain_data, starting_height=50)
@@ -91,7 +91,7 @@ class TestAirBlock:
         test.terrain_data[51, 150+3, 150] = 'air'
         test.terrain_data[51, 150+4, 150] = 'air'
         test.terrain_data[51, 150+5, 150] = 'stone'
-        assert (test.get_current_state()==('stone', 'stone', 'stone', 'air+diamond_ore', 'stone', 'stone', 'stone', 'stone', 'stone', 'stone', 50)), test.get_current_state()
+        assert (test.get_current_state()==('stone', 'stone', 'stone', 'air+diamond_ore', 'stone', 'stone', 'stone', 'stone', 'stone', 50)), test.get_current_state()
 
 
     def test_air_block5(self):
@@ -103,7 +103,7 @@ class TestAirBlock:
         test.terrain_data[51, 150+3, 150] = 'air'
         test.terrain_data[51, 150+4, 150] = 'air'
         test.terrain_data[51, 150+5, 150] = 'stone'
-        assert (test.get_current_state()==('stone', 'stone', 'stone', 'air+diamond_ore', 'stone', 'stone', 'stone', 'stone', 'stone', 'stone', 50)), test.get_current_state()
+        assert (test.get_current_state()==('stone', 'stone', 'stone', 'air+diamond_ore', 'stone', 'stone', 'stone', 'stone', 'stone', 50)), test.get_current_state()
 
         
     def test_air_block6(self):
@@ -116,7 +116,7 @@ class TestAirBlock:
         test.terrain_data[51, 150+3, 150] = 'air'
         test.terrain_data[51, 150+4, 150] = 'air'
         test.terrain_data[51, 150+5, 150] = 'stone'
-        assert (test.get_current_state()==('stone', 'stone', 'stone', 'air+diamond_ore', 'stone', 'stone', 'stone', 'stone', 'stone', 'stone', 50)), test.get_current_state()
+        assert (test.get_current_state()==('stone', 'stone', 'stone', 'air+diamond_ore', 'stone', 'stone', 'stone', 'stone', 'stone', 50)), test.get_current_state()
 
 
 
