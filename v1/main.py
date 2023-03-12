@@ -1,8 +1,10 @@
 from simulation import Simulation,REWARD_TABLE
 import helper
 import random
-from sklearn.neural_network import MLPClassifier
+from sklearn.neural_network import MLPRegressor
 import numpy as np
+import sys
+
 
 
 
@@ -29,7 +31,7 @@ if __name__ == "__main__":
 
     reward_track = []  # store reward for each epsiode
 
-    critic = MLPClassifier()
+    critic = MLPRegressor(hidden_layer_sizes = (200,50))
 
     terrain_data, terrain_height = helper.create_custom_world(50, 50, [(3, "air"), (5, "stone"), (2, "diamond_ore")])
 
@@ -83,21 +85,23 @@ if __name__ == "__main__":
 
                 steps = steps - mining_penatly if action.startswith('M_') else steps - moving_penatly
 
-
+                #reward += 0.00001
+                reward = float(reward)
                 new_state = s.get_current_state()
                 if i2>1000:
                     pass
-                    #p_m = s.agent.get_possible_moves(new_state)
-                    #temp_new_SA = [list(new_state)+[i] for i in p_m]
-                    #temp_new_SA = s.convert(temp_new_SA,mapping)
-                    #critic.predict(temp_new_SA)
-                    #reward  = (1-lr)*reward + lr*(reward+discount_rate*max(critic.predict(temp_new_SA)))
+                    p_m = s.agent.get_possible_moves(new_state)
+                    temp_new_SA = [list(new_state)+[i] for i in p_m]
+                    temp_new_SA = s.convert(temp_new_SA,mapping)
+                    reward  = (1-lr)*reward + lr*(reward+discount_rate*max(critic.predict(temp_new_SA)))
+                    #print(reward,type(reward))
+                    reward = reward
 
 
 
 
 
-                SAR.append([list(state), action, float(reward)])
+                SAR.append([list(state), action, reward])
                 state = new_state
                 # break if meet lava
                 if d:
@@ -112,7 +116,10 @@ if __name__ == "__main__":
             #convert to int
             X = s.convert(X,mapping)
 
-            Y = np.asarray([R for S, A, R in batch])
+            Y = np.asarray([float(R) for S, A, R in batch])
+            #print(Y.shape[0],type(Y[0]))
+
+            sys.stdout.flush()
             critic.fit(X,Y)
 
             diamonds_mined = s.agent.inventory["diamond_ore"]
