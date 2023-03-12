@@ -42,6 +42,9 @@ if __name__ == "__main__":
 
     mapping = []
 
+    lr = 0.1  # learning rate
+    discount_rate = 0.99
+
 
     diamond_sum = 0
     for i in range(int(num_epi / num_epi_permap)):
@@ -52,6 +55,7 @@ if __name__ == "__main__":
         epsilon = 1   #see if this will be problem
 
         for i2 in range(num_epi_permap):
+            #print(i2)
             #print("testing")
             s = Simulation(terrain_data, starting_height)
 
@@ -75,13 +79,26 @@ if __name__ == "__main__":
                 if not action.startswith('M_'):
                     reward += MOVING_REWARD
 
-                SAR.append([list(state), action, reward])
+
 
                 steps = steps - mining_penatly if action.startswith('M_') else steps - moving_penatly
 
 
-                state = s.get_current_state()
+                new_state = s.get_current_state()
+                if i2>1000:
+                    pass
+                    #p_m = s.agent.get_possible_moves(new_state)
+                    #temp_new_SA = [list(new_state)+[i] for i in p_m]
+                    #temp_new_SA = s.convert(temp_new_SA,mapping)
+                    #critic.predict(temp_new_SA)
+                    #reward  = (1-lr)*reward + lr*(reward+discount_rate*max(critic.predict(temp_new_SA)))
 
+
+
+
+
+                SAR.append([list(state), action, float(reward)])
+                state = new_state
                 # break if meet lava
                 if d:
                     break
@@ -93,17 +110,7 @@ if __name__ == "__main__":
             batch = random.sample(SAR, len(SAR)//2)
             X = [S+[A] for S,A,R in batch]
             #convert to int
-            for sample in X:
-                for i in range(len(sample)):
-                    temp = sample[i]
-                    if temp == int:
-                        pass
-                    else:
-                        if temp not in mapping:
-                            mapping.append(temp)
-                        sample[i] = mapping.index(temp)+1000
-
-
+            X = s.convert(X,mapping)
 
             Y = np.asarray([R for S, A, R in batch])
             critic.fit(X,Y)
@@ -120,7 +127,7 @@ if __name__ == "__main__":
 
             reward_track.append(total_reward)
 
-            if i2 % 100 == 0 and i != 0:
+            if i2 % 100 == 0 :
                 print("Episode:", i2)
                 print("\tAverage diamonds mined:", diamond_sum / 100)
                 print("\tBest policy: ", diamonds_mined)

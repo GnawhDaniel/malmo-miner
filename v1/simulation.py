@@ -74,17 +74,9 @@ class Simulation:
             """
             t = list(state)
             X = [t + [i] for i in possible_moves]
-            for sample in X:
-                for i in range(len(sample)):
-                    temp = sample[i]
-                    if type(temp) == int:
-                        pass
-                    else:
-                        if temp not in mapping:
-                            mapping.append(temp)
-                        sample[i] = mapping.index(temp) + 1000
+            X = self.convert(X,mapping)
 
-            X = np.array(X)
+
 
             q_table = clf.predict(X)
             best_move = [AR[0] for AR in list(zip(possible_moves, q_table)) if AR[1] == max(q_table)]
@@ -234,6 +226,19 @@ class Simulation:
                 max_local = max_recurred
 
         return max_local
+    def convert(self,SA,mapping):
+        #print("called")
+        for sample in SA:
+            for i in range(len(sample)):
+                temp = sample[i]
+                if type(temp) == int:
+                    pass
+                else:
+                    if temp not in mapping:
+                        mapping.append(temp)
+                    sample[i] = mapping.index(temp) + 1000
+        SA = np.asarray(SA)
+        return SA
 
     def get_reward(self, state, action):
         """
