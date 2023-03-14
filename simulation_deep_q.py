@@ -1,7 +1,8 @@
 from simulation_q import Simulation, Agent
 import world_data_extractor
 from helper import pickilizer, unpickle
-import random
+import random, numpy as np
+from sklearn.neural_network import MLPRegressor, MLPClassifier
 
 
 class Simulation_deep_q(Simulation):
@@ -37,7 +38,8 @@ class Simulation_deep_q(Simulation):
             
             for i in self.diamond_locations:
                 #compare distances
-                if (dist := np.linalg.norm(loc - i)) < best_dist:
+                dist = np.linalg.norm(loc - i)
+                if (dist) < best_dist:
                     best = i
                     best_dist = dist
 
@@ -48,6 +50,39 @@ class Simulation_deep_q(Simulation):
         except:
             return 0
 
+
+class Classifier:
+    def __init__(self, lr, gamma, layers=(30,30)):
+        # Regression for critic: Q-values
+        # Classifier for actor: Predict best move
+        self.lr = lr
+        self.layers = layers
+        self.gamma = gamma
+
+        self.actor = self.create_actor()
+        self.critic = self.create_critic()
+    
+    def create_actor(self):
+        mlp = MLPClassifier(hidden_layer_sizes=self.layers, 
+                            alpha=self.lr,
+                            )
+        return mlp
+    
+    def create_critic(self):
+        mlp = MLPRegressor(hidden_layer_sizes=self.layers, 
+                            alpha=self.lr,)
+        return mlp
+
+    def _train_actor(self, samples):
+        for sample in samples:
+            s, a, r = sample
+            input = (*s, a)
+            a_pred = self.actor.predict(tuple(*s))
+            r_pred = self.critic.predict(tuple(*s))
+            
+
+    def _train_critic(self, samples):
+        pass
 
 if __name__ == "__main__":
 
@@ -65,7 +100,7 @@ if __name__ == "__main__":
     discount_rate = 0.95 
     epsilon = 0.2
 
-    q_function = None #IMPLEMENT THIS
+    q_function = Classifier(...)
 
     for i in range(num_worlds):
         terrain_data, terrain_height = world_data_extractor.run()
