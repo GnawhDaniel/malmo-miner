@@ -178,6 +178,7 @@ def run():
         file.write('\n')
     file.close()
     '''
-    pickilizer(terrain_data, "terrain_data.pck")
+
+    #pickilizer(terrain_data, "terrain_data.pck")
 
     return terrain_data, starting_height + AIR_BUFFER
