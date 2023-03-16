@@ -5,6 +5,7 @@ http://microsoft.github.io/malmo/0.30.0/Documentation/annotated.html
 
 import pickle as pck
 import numpy as np
+import json, math
 
 REWARD_TABLE = {
     "diamond_ore": 1000,
@@ -53,3 +54,12 @@ def create_custom_world(width, length, layers):
     #print(world)
 
     return world, total_y_length
+
+def get_grid_observation(world_state, name):
+
+    if (world_state.number_of_observations_since_last_state):
+        state = world_state.observations[-1].text
+        state = json.loads(state)
+        return state[name], math.floor(state["YPos"])
+        
+    return None, None
