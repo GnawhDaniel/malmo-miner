@@ -4,12 +4,8 @@ import random, copy
 from helper import pickilizer, unpickle
 from operator import add
 import helper
+from collections import defaultdict
 
-#from simulation import Agent, Simulation
-
-
-#
-starting_height = 70  # TODO: CHANGE LATER
 
 # CONSTANTS
 REWARD_TABLE = helper.REWARD_TABLE
@@ -88,12 +84,6 @@ class Simulation:
 
         self.agent = Agent(int(terrain_data.shape[1] / 2), starting_height - 2, int(terrain_data.shape[2] / 2))
 
-    def run(self):
-        self.fall()  # make agent touch the ground
-        # do the simulation
-        # q learning?
-        return  # ?
-
     def boundary_check(self, x, y, z) -> bool:
         """
         Returns: True if in bounds
@@ -105,9 +95,9 @@ class Simulation:
             return False
         if y < 0 or y > starting_height:
             return False
-    
+        
         return True
-
+  
     def at(self, x, y, z):
         if self.is_placed(x, y, z):
             return "stone"
@@ -151,7 +141,7 @@ class Simulation:
         The z-axis indicates the player's distance south (positive) or north (negative) of the origin point—i.e., the latitude
         """
         x, y, z = self.agent_xyz()
-        # print(x,y,z)
+
         '''
         (NL, NU, EL, EU, SL, SU, WL, WU, U, D, height)
         '''
@@ -162,7 +152,6 @@ class Simulation:
 
         # Searching Range
         r_distance = 5
-
 
         #NESW
         for d in dir:
@@ -476,26 +465,11 @@ if __name__ == "__main__":
     #
     terrain_data, terrain_height = helper.create_custom_world(50, 50, [(3, "air"), (5, "stone") ,(2,"diamond_ore")])
     
-
-    """
-    AIR 0
-    AIR
-    AIR 2
-    STONE
-    """
     starting_height = terrain_height - 1
 
     file = open("results.txt", 'w')
     
     move= ["N","S","W","E","U","M_NL", "M_NU", "M_EL", "M_EU", "M_SL", "M_SU", "M_WL", "M_WU", "M_U", "M_D"]
-
-    # print("AGENT START:", s.agent_xyz())
-    # print(len(s.agent_placed))
-    # print(len(s.agent_mined))
-
-    import time
-
-    from collections import defaultdict
     q_table = {}
 
 
