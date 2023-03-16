@@ -93,7 +93,7 @@ class Simulation:
             return False
         if z < 0 or z > world_shape[2] - 1:
             return False
-        if y < 0 or y > starting_height:
+        if y < 0 or y > self.starting_height:
             return False
         
         return True
