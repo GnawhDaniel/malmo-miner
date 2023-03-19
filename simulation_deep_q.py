@@ -1,22 +1,75 @@
 from simulation_q import Simulation, Agent
-import world_data_extractor
+#import world_data_extractor
 from helper import pickilizer, unpickle
+import helper
 import random, numpy as np
-from sklearn.neural_network import MLPRegressor, MLPClassifier
+from model import DDQN, Memory
+import tensorflow as tf
+
+'''
+░░░░▄▄▄▄▀▀▀▀▀▀▀▀▄▄▄▄▄▄
+░░░░█░░░░▒▒▒▒▒▒▒▒▒▒▒▒░░▀▀▄
+░░░█░░░▒▒▒▒▒▒░░░░░░░░▒▒▒░░█
+░░█░░░░░░▄██▀▄▄░░░░░▄▄▄░░░█
+░▀▒▄▄▄▒░█▀▀▀▀▄▄█░░░██▄▄█░░░█
+█▒█▒▄░▀▄▄▄▀░░░░░░░░█░░░▒▒▒▒▒█
+█▒█░█▀▄▄░░░░░█▀░░░░▀▄░░▄▀▀▀▄▒█
+░█▀▄░█▄░█▀▄▄░▀░▀▀░▄▄▀░░░░█░░█
+░░█░░▀▄▀█▄▄░█▀▀▀▄▄▄▄▀▀█▀██░█
+░░░█░░██░░▀█▄▄▄█▄▄█▄████░█
+░░░░█░░░▀▀▄░█░░░█░███████░█
+░░░░░▀▄░░░▀▀▄▄▄█▄█▄█▄█▄▀░░█
+░░░░░░░▀▄▄░▒▒▒▒░░░░░░░░░░█
+░░░░░░░░░░▀▀▄▄░▒▒▒▒▒▒▒▒▒▒░█
+░░░░░░░░░░░░░░▀▄▄▄▄▄░░░░░█
+Problem?
+'''
+tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+
+HEIGHT_MOD = 3
+
+#ONE HOT ENCODING
+BLOCK_MAP, ACTION_MAP = helper.enumerate_one_hot()
+ALL_MOVES = ["N","S","W","E","U","M_NL", "M_NU", "M_EL", "M_EU", "M_SL", "M_SU", "M_WL", "M_WU", "M_U", "M_D"]
 
 
 class Simulation_deep_q(Simulation):
-
-    def choose_move(self, epsilon, state, q_function):
+    def choose_move(self, epsilon, state, dqn):
         possible_moves = self.agent.get_possible_moves(state)
+
         #EPSILON
-        if (random.random() < epsilon or state not in q_table.keys()):
-            return possible_moves[random.randint(0, len(possible_moves) - 1)]
+        if (random.random() < epsilon):
+            return possible_moves[random.randint(0, len(possible_moves)-1)]
+        #GREEDY
         else:
+            #convert to onehot
+            height = state[-1] % HEIGHT_MOD
+            state = [BLOCK_MAP[s] for s in state[:-1]]
+            # state = helper.convert_bits(state)
+            state.append(height)
+
+            state = np.array(state, dtype=np.float32)
+            state = state[np.newaxis, :]
+
+
+            #state = tf.convert_to_tensor(state)
             
-            #implement this
+            actions = dqn.q_eval.predict(state, verbose=0)[0]
+
+            # --> [q_score1, q_score2, q_score3, ...]
             
-            return #best move
+            #SORTED INDECES
+            sorted_actions = np.flip(np.argsort(actions))
+
+            # best_sorted = np.argmax(actions)
+            # print(best_sorted)
+
+            #choose best move only if move is possible in current state
+            for action in sorted_actions:
+                if ALL_MOVES[action] in possible_moves:
+                    return ALL_MOVES[action]
+            
+            return ALL_MOVES[0] #should never happen
         
     def calculate_diamond_locations(self): 
         diamonds = []
@@ -51,126 +104,129 @@ class Simulation_deep_q(Simulation):
             return 0
 
 
-class Classifier:
-    def __init__(self, lr, gamma, layers=(30,30)):
-        # Regression for critic: Q-values
-        # Classifier for actor: Predict best move
-        self.lr = lr
-        self.layers = layers
-        self.gamma = gamma
-
-        self.actor = self.create_actor()
-        self.critic = self.create_critic()
-    
-    def create_actor(self):
-        mlp = MLPClassifier(hidden_layer_sizes=self.layers, 
-                            alpha=self.lr,
-                            )
-        return mlp
-    
-    def create_critic(self):
-        mlp = MLPRegressor(hidden_layer_sizes=self.layers, 
-                            alpha=self.lr,)
-        return mlp
-
-    def _train_actor(self, samples):
-        for sample in samples:
-            s, a, r = sample
-            input = (*s, a)
-            a_pred = self.actor.predict(tuple(*s))
-            r_pred = self.critic.predict(tuple(*s))
-            
-
-    def _train_critic(self, samples):
-        pass
-
 if __name__ == "__main__":
+    tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+
+
+    lr = 0.05
+    gamma = 0.5
+    epsilon = 0.9
+    epsilon_min=0.1
+    epsilon_dec=0.99
+
+    ddqn = DDQN(lr, gamma, batch_size=512, layers=(256, 256), state_size=11, action_size=15)
+    memory = Memory(250_000, state_size=11)
 
     episodes_per_training = 100
-    episodes_per_world = 10000
+    trainings_per_world = 100
     num_worlds = 10
 
-    steps_per_simulation = 500
-    states_sampled_per_episode = steps_per_simulation / 10
+    steps_per_simulation = 200
 
-    num_trainings = 0
-    trainings_per_pickle = 100
+    training_counter = 0
+    trainings_per_save = 10
 
-    lr = 0.1
-    discount_rate = 0.95 
-    epsilon = 0.2
+    episode_counter = 0
 
-    q_function = Classifier(...)
 
-    for i in range(num_worlds):
-        terrain_data, terrain_height = world_data_extractor.run()
-
-        episodes_run_in_world = 0
+    for _ in range(num_worlds):
+        #terrain_data, terrain_height = world_data_extractor.run()
+        terrain_data, terrain_height = helper.create_custom_world(50, 50, [(3, "air"), (5, "stone") ,(2,"diamond_ore")])
+        terrain_height -= 1
 
         #PER WORLD
-        while episodes_run_in_world < episodes_per_world:
-            episodes_run_in_training = 0
-
-            SAR_to_train_from = []
+        for _ in range(trainings_per_world): # Simulating same world episodes_per_training amount of times
+            
+            diamonds_sum = 0
+            best_diamonds = 0
             
             #PER TRAINING SESSION
-            while episodes_run_in_training < episodes_per_training:
+            for episode in range(episodes_per_training:=20): 
+                
 
                 #reset simulation
-                sim = Simulation(terrain_data, terrain_height)
-                steps = 0
-                episode = []
+                sim = Simulation_deep_q(terrain_data, terrain_height)
 
                 prevState = None
 
-                while steps < steps_per_simulation:
+                stored_epsilon = epsilon
+
+                print_statistics = episode == (episodes_per_training - 1)
+
+                if print_statistics:
+                    epsilon = 0
+
+                for step in range(steps_per_simulation): # Simulating a single world
 
                     state = sim.get_current_state()
 
-                    action = sim.choose_move(epsilon, state, q_function)
-
+                    # Change state to mapped version
+                    action = sim.choose_move(epsilon, state, ddqn)
+                    
                     reward, dead = sim.get_reward(state, action)
+                    new_state = sim.get_current_state()
 
-                    steps += 1
-                    episode.append((state, action, reward))
+                    #TODO: ADD HEURISTICs TO REWARD HERE
+                    #reward += heuristic(state, actio)
 
+                    #adjust height
+                    state[-1] = state[-1] % HEIGHT_MOD
+                    new_state[-1] = new_state[-1] % HEIGHT_MOD
+                    
+                    # print(new_state, state)
+
+                    done = dead or step == steps_per_simulation - 1
+                    memory.store((state, action, reward, new_state, done))
+                    #break early
                     if dead:
                         break
+            
+                epsilon = stored_epsilon
 
-                #CALCULATE AND PROPOGATE THE DISCOUNTED FUTURE REWARD
-                future_reward = 0
-                #go backwards through episode
-                for i in range(len(episode) - 1, -1, -1):
-                    #discount the future reward
-                    future_reward *= discount_rate
-                    #store the state's current reward
-                    temp = episode[i, 2]
-                    #add future reward to the state's reward
-                    episode[i, 2] += future_reward
-                    #add the current state's reward to the future reward for next states
-                    future_reward += temp
+                diamonds_found = sim.agent.inventory["diamond_ore"]
+                diamonds_sum += diamonds_found
 
-                #MINI-BATCH and add to training data
-                SAR_to_train_from += random.sample(episode, states_sampled_per_episode)
+                if diamonds_found > best_diamonds:
+                    best_diamonds = diamonds_found
 
-                #increment
-                episodes_run_in_training += 1
-                episodes_run_in_world += 1
+                episode_counter += 1
 
+                if print_statistics:
+                    print("Episode:", episode_counter)
+                    print("\tAverage diamonds mined:", diamonds_sum / episodes_per_training)
+                    print("\tMost diamonds found:", best_diamonds)
+                    print("\tBest policy: ", diamonds_found) 
+                        
+                
             #TRAIN
+            ddqn.learn(memory, ACTION_MAP, BLOCK_MAP)
 
-            #IMPLEMENT THIS
-            #q_learning_thing.partial_fit(SAR_to_train_from)
+            #decrease epsilon every training
+            epsilon *= epsilon_dec
+            if epsilon < epsilon_min:
+                epsilon = epsilon_min
 
-            num_trainings += 1
-
-            #store result function every so often
-            if num_trainings % trainings_per_pickle:
-                #pickilizer(q_learning_thing,    "NN at " + str(num_trainings) + " trainings.pck")
-                pass
-
-
-    
+            #store network every n trainings
+            if training_counter % trainings_per_save:
+                filename = "NN at " + str(training_counter) + " trainings.h5"
+                #ddqn.save(filename)
+            
+            
 
 
-    
+
+# #CALCULATE AND PROPOGATE THE DISCOUNTED FUTURE REWARD
+# future_reward = 0
+# #go backwards through episode
+# for i in range(len(episode) - 1, -1, -1):
+#     #discount the future reward
+#     future_reward *= discount_rate
+#     #store the state's current reward
+#     temp = episode[i, 2]
+#     #add future reward to the state's reward
+#     episode[i, 2] += future_reward
+#     #add the current state's reward to the future reward for next states
+#     future_reward += temp
+
+# #MINI-BATCH and add to training data
+# SAR_to_train_from += random.sample(episode, states_sampled_per_episode)
