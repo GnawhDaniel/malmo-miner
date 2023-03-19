@@ -14,10 +14,9 @@ EXCLUSION = {"air", "lava", "flowing_lava", "water", "flowing_water", "bedrock"}
 DEATH_VALUE = -1000
 MOVE_PENALTY = 0
 
-
 class Agent:
     """
-    Consider health if time permits.
+    TODO: Consider health if time permits.
     """
 
     def __init__(self, x, y, z) -> None:
@@ -212,7 +211,7 @@ class Simulation:
         #HEIGHT
         state_space.append(self.agent.height)
 
-        return tuple(state_space)
+        return state_space
 
     def recursive_search(self, coordinate, direction, search_depth):
         '''
