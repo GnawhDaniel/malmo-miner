@@ -55,7 +55,6 @@ def create_custom_world(width, length, layers):
     world = np.reshape(world, (total_y_length, width, length))
 
     print("WORLD SHAPE!!:", world.shape)
-    #print(world)
 
     return world, total_y_length
 
@@ -93,10 +92,6 @@ def onehotencode():
     block_code = to_categorical([i for i in range(len(block_list))])
     action_code = to_categorical([i for i in range(len(actions))])
 
-    # print(block_code)
-    # print(action_code)
-
-
     for i in range(len(block_list)):
         BLOCK_MAP[block_list[i]] = block_code[i]
     
@@ -127,20 +122,9 @@ def enumerate_one_hot():
     for i in range(len(actions)):
         ACTION_MAP[actions[i]] = action_code[i]
 
-    # print(BLOCK_MAP)
     return BLOCK_MAP, ACTION_MAP
 
 
-# def convert_bits(a):
-#     l = []
-#     for i in a:
-#         num = 0
-#         for j in range(len(i)):
-#             num += i[j]
-#             num << 1
-#         l.append(num)
-
-#     return np.array(l, dtype=np.float32)
 
 if __name__ == "__main__":
     #onehotencode()
