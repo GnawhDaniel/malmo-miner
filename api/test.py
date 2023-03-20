@@ -5,7 +5,7 @@ import time
 import random
 import json
 import numpy as np
-from api_helper import get_current_state
+#from api_helper import get_current_state
 
 #change N/S, check wheter E/w is correct
 def move(r_move):
@@ -47,6 +47,11 @@ def move(r_move):
 
         agent_host.sendCommand("look -1")
         agent_host.sendCommand("look -1")
+
+
+
+
+
 
 
 
@@ -259,7 +264,7 @@ while max_step >= 0:
 
             agent_y = observations.get("YPos", None)
 
-            print(get_current_state(1,5,5,agent_y,terrain_data))
+            #print(get_current_state(1,5,5,agent_y,terrain_data))
 
         max_step -= 1
         time.sleep(10)
