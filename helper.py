@@ -101,11 +101,11 @@ def onehotencode():
     return ACTION_MAP, BLOCK_MAP
 
 def enumerate_one_hot():
-    block_list = ["stone", "air", "bedrock"]
+    block_list = ["stone", "air", "bedrock" , "lava", "flowing_lava", "water", "flowing_water", "air+ore"]
         
     for block in REWARD_TABLE.keys():
         block_list.append(block)
-        block_list.append("air+" + block)
+        # block_list.append("air+" + block)
     
     BLOCK_MAP = {}
     ACTION_MAP = {}

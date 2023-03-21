@@ -1,7 +1,7 @@
-import tensorflow as tf
-from keras.models import Sequential, Model, load_model
-from keras.layers import Dense, Dropout, Input, Add
+from keras.models import Model, load_model
+from keras.layers import Dense, Input
 from keras.optimizers import Adam
+from keras import regularizers
 import numpy as np
 import helper, copy
 
@@ -34,6 +34,8 @@ class Memory:
         self.terminals[index] = done
 
         self.counter += 1
+        if self.counter % self.mem_size == 0:
+            print("!!!Restarted Memory!!!")
 
     def batch(self, batch_size):
         max_size = min(self.counter, self.mem_size)
@@ -41,7 +43,7 @@ class Memory:
         return self.states[batch], self.actions[batch], self.rewards[batch], self.new_state[batch], self.terminals[batch] 
 
 class DDQN:
-    def __init__(self, lr, gamma, batch_size, layers=(256, 256), state_size=11, action_size=15, replace_target = 20):
+    def __init__(self, lr, gamma, batch_size, layers=(256, 256), state_size=11, action_size=15, replace_target=5, regularization_strength=0.05):
         self.lr = lr
         self.gamma = gamma
         self.layers = layers
@@ -50,6 +52,7 @@ class DDQN:
         self.batch_size=batch_size
         self.replace_target = replace_target
         self.counter = 0 # Counter for replace_target
+        self.regularization_strength = regularization_strength
 
         self.action_space = [i for i in range(self.action_size)]
         # Model
@@ -68,7 +71,8 @@ class DDQN:
         for layer in self.layers[1:]:
             h = Dense(layer, activation='tanh')(h)
         
-        output = Dense(self.action_size, activation="linear")(h)
+        output = Dense(self.action_size, activation="linear", \
+                       kernel_regularizer=regularizers.l1(self.regularization_strength))(h)
 
         model = Model(inputs=state_input, outputs=output)
         adam = Adam(self.lr)
@@ -100,12 +104,6 @@ class DDQN:
                     for j in range(len(array[i])):
                         array[i, j] = map_object[array[i, j]]
 
-            # block_map = np.vectorize(lambda x: BLOCK_MAP[x])
-            # mapping = np.vectorize(block_map)
-            # state[:, :-1] = mapping(state[:, :-1])
-            # new_state[:, :-1] = mapping(new_state[:, -1])
-            # new_state = new_state.astype(np.float32)
-            # state = state.astype(np.float32)
 
             replace(state[:, :-1], BLOCK_MAP)
             replace(new_state[:, :-1], BLOCK_MAP)
@@ -146,6 +144,7 @@ class DDQN:
             batch_index = np.arange(self.batch_size, dtype=np.int32) if not single else np.array([0])
 
             q_target[batch_index, action_indices] = reward + (self.gamma * q_next[batch_index, max_actions.astype(int)] * np.invert(done))
+            
             self.q_eval.fit(state, q_target, verbose=0)
             # print(self.q_eval.layers[1].weights)
             

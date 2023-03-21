@@ -1,5 +1,5 @@
 from simulation_q import Simulation, Agent
-#import world_data_extractor
+import world_data_extractor
 from helper import pickilizer, unpickle
 import helper
 import random, numpy as np
@@ -34,7 +34,8 @@ ALL_MOVES = ["N","S","W","E","U","M_NL", "M_NU", "M_EL", "M_EU", "M_SL", "M_SU",
 class Simulation_deep_q(Simulation):
     def choose_move(self, epsilon, state, dqn):
         possible_moves = self.agent.get_possible_moves(state)
-
+        # print(possible_moves)
+        # print(state)
         #EPSILON
         if (random.random() < epsilon):
             return possible_moves[random.randint(0, len(possible_moves)-1)]
@@ -127,42 +128,46 @@ class Simulation_deep_q(Simulation):
 
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
-    tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+    # tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+    plt.ion()
+    fig, ax = plt.subplots()
+    ax.set_ylim(0, 20)
+    line, = ax.plot([], [], lw=2)
 
-    # fig, ax = plt.subplots()
-    # ax.set_ylim(0, 20)
-    # line, = ax.plot([], [], lw=2)
+    lr = 0.001
+    gamma = 0.95
+    epsilon = 0.99
+    epsilon_min=0.2
+    epsilon_dec=0.992
 
-    lr = 0.0169
-    gamma = 0.88
-    epsilon = 0.90
-    epsilon_min=0.1
-    epsilon_dec=0.95
 
     heuristic_factor = 50
+    dawdle_punishment = -100
 
-    ddqn = DDQN(lr, gamma, batch_size=1000, layers=(64, 64, 64, 64, 64), state_size=11, action_size=15)
+    ddqn = DDQN(lr, gamma, batch_size=200, layers=(64,64,64,64), state_size=11, action_size=15, replace_target=7, regularization_strength=0.0612)
     memory = Memory(250_000, state_size=11)
 
     episodes_per_training = 100
     trainings_per_world = 100
     num_worlds = 10
 
-    steps_per_simulation = 18 + 5 + 3
+    steps_per_simulation = 500
 
     training_counter = 0
     trainings_per_save = 10
 
     episode_counter = 0
 
-    best_diamonds = 0
 
     for _ in range(num_worlds):
-        #terrain_data, terrain_height = world_data_extractor.run()
-        terrain_data, terrain_height = helper.create_custom_world(3, 3, [(3, "air"), (5, "stone") ,(2,"diamond_ore")])
-        terrain_height -= 1
+        terrain_data, terrain_height = world_data_extractor.run()
+
+        # terrain_data, terrain_height = helper.create_custom_world(3, 3, [(3, "air"), (5, "stone") ,(2,"diamond_ore")])
+        terrain_height -= 2
 
         sim = Simulation_deep_q(terrain_data, terrain_height)
+        # sim.fall()
+
         sim.calculate_diamond_locations()
         diamond_locations = sim.diamond_locations
 
@@ -170,12 +175,15 @@ if __name__ == "__main__":
         for _ in range(trainings_per_world): # Simulating same world episodes_per_training amount of times
             
             diamonds_sum = 0
+            best_diamonds = 0 
             
             #PER TRAINING SESSION
             for episode in range(episodes_per_training): 
                 
                 #reset simulation
                 sim = Simulation_deep_q(terrain_data, terrain_height)
+                sim.fall()
+
                 sim.diamond_locations = diamond_locations
                 stored_epsilon = epsilon
 
@@ -184,21 +192,33 @@ if __name__ == "__main__":
                 if print_statistics:
                     epsilon = 0
 
+                prev_loc = None
+                prev_prev_loc = None
+
                 for step in range(steps_per_simulation): # Simulating a single world
+                    
+                    loc = sim.agent_xyz()
 
                     state = sim.get_current_state()
 
                     # Change state to mapped version
                     action = sim.choose_move(epsilon, state, ddqn)
 
-                    heuristic = sim.diamond_heuristic(action, heuristic_factor)
+                    heuristic_diamond = sim.diamond_heuristic(action, heuristic_factor)
                     
                     reward, dead = sim.get_reward(state, action)
                     new_state = sim.get_current_state()
 
                     #add heuristic
-                    reward += heuristic
+                    if reward == 0: # So other ores aren't weighted negatively
+                        reward += heuristic_diamond
 
+                    # same place heuristic
+                    if (loc == prev_prev_loc):
+                        reward += dawdle_punishment
+                    
+                    prev_prev_loc = prev_loc
+                    prev_loc = loc
      
                     #adjust height
                     state[-1] = state[-1] // HEIGHT_MOD
@@ -206,6 +226,8 @@ if __name__ == "__main__":
                     
                     done = dead or step == steps_per_simulation - 1
                     memory.store((state, action, reward, new_state, done))
+
+                    
 
                     if dead:
                         break
@@ -223,19 +245,22 @@ if __name__ == "__main__":
                 if print_statistics:
                     print()
                     print("Episode:", episode_counter)
+                    print("\tMost diamonds found (per episode):", best_diamonds)
                     print("\tAverage diamonds mined:", diamonds_sum / episodes_per_training)
-                    print("\tMost diamonds found:", best_diamonds)
                     print("\tBest policy: ", diamonds_found)
                     print("\tEpsilon:", epsilon)
+                    print("\tInventory: ", sim.agent.inventory)
 
-                    # line.set_data(np.append(line.get_xdata(), episode_counter), np.append(line.get_ydata(), diamonds_found))
+                    line.set_data(np.append(line.get_xdata(), episode_counter), np.append(line.get_ydata(), diamonds_found))
 
-                    # ax.relim()
-                    # ax.autoscale_view()
-                    # plt.draw()
+                    ax.relim()
+                    ax.autoscale_view()
+                    plt.draw()
                     # plt.pause(0.001)
                     # if len(line.get_xdata()) > 50:
                     #     line.set_data(line.get_xdata()[1:], line.get_ydata()[1:])
+                    fig.canvas.draw()
+                    fig.canvas.flush_events()
 
                         
             # #TRAIN

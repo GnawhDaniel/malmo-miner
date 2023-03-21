@@ -127,7 +127,7 @@ def run():
     height_seen = set()
     terrain_data = []
     
-    AIR_BUFFER = 2 
+    AIR_BUFFER = 3 
     for _i in range(AIR_BUFFER):
         terrain_data.append(np.full((301,301), "air"))
 
@@ -160,7 +160,14 @@ def run():
 
             #end the mission when world extracted
             if (height <= 5):
+                # world_state.is_mission_running = False
                 break
+
+
+    BEDROCK_BUFFER = 5
+    for _i in range(BEDROCK_BUFFER):
+        terrain_data.append(np.full((301,301), "bedrock"))
+
     terrain_data = np.array(terrain_data)
     print()
     print("Mission ended")
@@ -170,15 +177,13 @@ def run():
     print("Layers: ", terrain_data.shape)
     # print("Layer size: ", terrain_data[0].shape)
 
-    #validation using textfile
-    '''
-    file = open("worldTest.txt", "w")
-    for i in terrain_data:
-        file.write(str(i))
-        file.write('\n')
-    file.close()
-    '''
-
-    #pickilizer(terrain_data, "terrain_data.pck")
+    #PREPROCESS BLOCKS
+    all_blocks = set(np.unique(terrain_data))
+    for i in all_blocks - helper.EXCLUSION:
+        terrain_data[terrain_data==i] = "stone"
+        
+    terrain_data = np.flipud(terrain_data)
+    save_dict = {"terrain_data": terrain_data, "starting_height": starting_height+AIR_BUFFER}
+    pickilizer(save_dict, "terrain_data.pck")
 
     return terrain_data, starting_height + AIR_BUFFER

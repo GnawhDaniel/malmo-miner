@@ -13,7 +13,7 @@ class Agent:
     REWARD_TABLE = helper.REWARD_TABLE
     EXCLUSION = {"air", "lava", "flowing_lava", "water", "flowing_water", "bedrock"}.union(set(REWARD_TABLE.keys()))
     DEATH_VALUE = -1000
-    MOVE_PENALTY = 0
+    MOVE_PENALTY = -10
 
     def __init__(self, x, y, z) -> None:
         self.x, self.height, self.z = x, y, z
@@ -89,18 +89,21 @@ class Simulation:
             return False
         if z < 0 or z > world_shape[2] - 1:
             return False
-        if y < 0 or y > self.starting_height:
+        if y < 0 or y >= self.starting_height:
             return False
         
         return True
   
     def at(self, x, y, z):
-        if self.is_placed(x, y, z):
-            return "stone"
+        if self.boundary_check(x, y, z):
+            if self.is_placed(x, y, z):
+                return "stone"
 
-        if self.is_mined(x, y, z):
-            return "air"
-        return self.terrain_data[y, x, z]
+            if self.is_mined(x, y, z):
+                return "air"
+            return self.terrain_data[y, x, z]
+        else:
+            return "bedrock"
 
     def agent_xyz(self):
         # starting_height - self.agent.heightcle
@@ -162,7 +165,7 @@ class Simulation:
                     max_block = self.recursive_search(lower_coord, search_direction, r_distance)
 
                     if max_block in Agent.REWARD_TABLE:
-                        lower += "+" + max_block
+                        lower += "+" + "ore"# max_block
                 
                 state_space.append(lower)  # Lower
 
@@ -178,7 +181,7 @@ class Simulation:
                     max_block = self.recursive_search(upper_coord, search_direction, r_distance)
 
                     if max_block in Agent.REWARD_TABLE:
-                        upper += "+" + max_block
+                        upper += "+" + "ore"# max_block
 
                 state_space.append(upper)  # Upper
 
@@ -192,7 +195,7 @@ class Simulation:
                 max_block = self.recursive_search((x, y + 2, z), (0, 1, 0), r_distance)
 
                 if max_block in Agent.REWARD_TABLE:
-                    lower += "+" + max_block
+                    lower += "+" + "ore"# max_block
 
             state_space.append(above)   
 
@@ -309,7 +312,10 @@ class Simulation:
             if block_mined in Agent.REWARD_TABLE: # TODO: changed block to block_mined
                 reward = Agent.REWARD_TABLE[block_mined]
             
-
+            """
+            FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+                            if type(self.closest_diamond) != type(None) and block_mined == self.closest_diamond:
+            """
             if type(self.closest_diamond) != type(None) and block_mined == self.closest_diamond:
                 self.closest_diamond = None
 
