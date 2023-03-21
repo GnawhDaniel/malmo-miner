@@ -11,9 +11,7 @@ terrain_data = obj["terrain_data"]
 starting_height = obj["starting_height"]
 print(starting_height)
 
-sim = Simulation_deep_q(terrain_data, starting_height-2)
-print(sim.get_current_state())
-
+print(terrain_data[:, 1, 1])
 
 
 

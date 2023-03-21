@@ -7,13 +7,14 @@ import helper
 from collections import defaultdict
 
 
-# CONSTANTS
 
 class Agent:
+    # Constants      
     REWARD_TABLE = helper.REWARD_TABLE
-    EXCLUSION = {"air", "lava", "flowing_lava", "water", "flowing_water", "bedrock"}.union(set(REWARD_TABLE.keys()))
+    NOT_MINEABLE = {"air", "lava", "flowing_lava", "water", "flowing_water", "bedrock"}
+    EXCLUSION = NOT_MINEABLE.union(set(REWARD_TABLE.keys()))
     DEATH_VALUE = -1000
-    MOVE_PENALTY = -10
+    MOVE_PENALTY = 0
 
     def __init__(self, x, y, z) -> None:
         self.x, self.height, self.z = x, y, z
@@ -41,6 +42,9 @@ class Agent:
         """
         moves = []
 
+    
+        # (NL, NU, EL, EU, SL, SU, WL, WU, U, D, prev_move, height)
+
         # MOVING
         # North
         if state[0].startswith('air') and state[1].startswith('air'):
@@ -61,8 +65,8 @@ class Agent:
         # MINING
         # (NL, NU, EL, EU, SL, SU, WL, WU, U, D, height)
         M = ["M_NL", "M_NU", "M_EL", "M_EU", "M_SL", "M_SU", "M_WL", "M_WU", "M_U", "M_D"]
-        for i in range(len(state) - 1):
-            if not state[i].startswith('air') and state[i] != "bedrock":
+        for i in range(len(state) - 2):
+            if not state[i].startswith('air') and state[i] not in Agent.NOT_MINEABLE:
                 moves.append(M[i])
         return moves
 
@@ -76,6 +80,8 @@ class Simulation:
 
         self.agent_mined = set()
         self.agent_placed = set()
+        
+        self.last_move = "N"
         # self.diamonds_mined = 0
 
         self.agent = Agent(int(terrain_data.shape[1] / 2), starting_height - 2, int(terrain_data.shape[2] / 2))
@@ -114,7 +120,7 @@ class Simulation:
         possible_moves = self.agent.get_possible_moves(state)
         #EPSILON
         if (random.random() < epsilon or state not in q_table.keys()):
-            return possible_moves[random.randint(0, len(possible_moves) - 1)]
+            return [random.randint(0, len(possible_moves) - 1)]
         else:
             """
             careful when add new move as the index will be wrong
@@ -135,8 +141,8 @@ class Simulation:
 
     def get_current_state(self) -> "state":
         """
-        The x-axis indicates the player's distance east (positive)  or west (negative) of the origin point—i.e., the longitude,
-        The z-axis indicates the player's distance south (positive) or north (negative) of the origin point—i.e., the latitude
+        The x-axis indicates the player's distance east (positive)  or west (negative) of the origin point-i.e., the longitude,
+        The z-axis indicates the player's distance south (positive) or north (negative) of the origin point-i.e., the latitude
         """
         x, y, z = self.agent_xyz()
 
@@ -206,6 +212,9 @@ class Simulation:
         else:
             state_space.append(self.at(x, y - 1, z))   # below feet
         
+        #last_move
+        state_space.append(self.last_move)
+
         #HEIGHT
         state_space.append(self.agent.height)
 

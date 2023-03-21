@@ -159,12 +159,12 @@ def run():
             #print(terrain_data, height)
 
             #end the mission when world extracted
-            if (height <= 5):
+            if (height <= 6): # Where bedrock starts
                 # world_state.is_mission_running = False
                 break
 
 
-    BEDROCK_BUFFER = 5
+    BEDROCK_BUFFER = 6
     for _i in range(BEDROCK_BUFFER):
         terrain_data.append(np.full((301,301), "bedrock"))
 

@@ -5,6 +5,7 @@ import helper
 import random, numpy as np
 from model import DDQN, Memory
 import tensorflow as tf
+import copy
 '''
 ░░░░▄▄▄▄▀▀▀▀▀▀▀▀▄▄▄▄▄▄
 ░░░░█░░░░▒▒▒▒▒▒▒▒▒▒▒▒░░▀▀▄
@@ -24,7 +25,7 @@ import tensorflow as tf
 Problem?
 '''
 
-HEIGHT_MOD = 3
+HEIGHT_MOD = 1
 
 #ONE HOT ENCODING
 BLOCK_MAP, ACTION_MAP = helper.enumerate_one_hot()
@@ -37,12 +38,16 @@ class Simulation_deep_q(Simulation):
         # print(possible_moves)
         # print(state)
         #EPSILON
+        save_state = copy.deepcopy(state) # TODO: uncomment
         if (random.random() < epsilon):
-            return possible_moves[random.randint(0, len(possible_moves)-1)]
+            self.last_move = possible_moves[random.randint(0, len(possible_moves)-1)]
+            return self.last_move
         #GREEDY
         else:
             height = state[-1] // HEIGHT_MOD
-            state = [BLOCK_MAP[s] for s in state[:-1]]
+            prev_move = ACTION_MAP[state[-2]]
+            state = [BLOCK_MAP[s] for s in state[:-2]]
+            state.append(prev_move)
             state.append(height)
             state = np.array(state, dtype=np.float32)
             state = state[np.newaxis, :]
@@ -58,7 +63,8 @@ class Simulation_deep_q(Simulation):
                     if epsilon == 0:
                         """Debug"""
                         # print(dqn.q_eval.layers[1].weights)
-                        print(ALL_MOVES[action], end=", ")
+                        print(ALL_MOVES[action], save_state, self.closest_diamond, end=" ")
+
                         # myfunc_vec = np.vectorize(lambda x: ACTION_MAP[x].astype(int))
                         # possible_moves_ind = myfunc_vec(possible_moves)
                         # print(possible_moves_ind)
@@ -68,7 +74,9 @@ class Simulation_deep_q(Simulation):
                         # print(np.array(actions)[possible_moves_ind])
                         # print(action)
                         pass
-                    return ALL_MOVES[action]
+
+                    self.last_move = ALL_MOVES[action]
+                    return self.last_move
             
             raise 
     
@@ -88,6 +96,7 @@ class Simulation_deep_q(Simulation):
 
     def diamond_heuristic(self, move, multiplier=1.5):
         loc = np.array([*self.agent_xyz()])
+        
         if type(self.closest_diamond) == type(None):
             best = self.diamond_locations[0]
             best_dist = np.Inf
@@ -111,7 +120,6 @@ class Simulation_deep_q(Simulation):
         best_dist = np.linalg.norm(self.closest_diamond - loc)
             
         #CALCULATE HEURISTIC BASED ON THE BEST DIAMOND LOCATION
-        
         relative_coords = {"N": (0, 0, -1),"S":(0, 0, 1),"W":(-1, 0, 0),"E":(1, 0, 0),"U":(0, 1, 0), "D": (0, -1, 0)}
         
         updated_move = loc + relative_coords[move[0]] if move[0] != "M" else loc + relative_coords[move[2]]
@@ -120,7 +128,7 @@ class Simulation_deep_q(Simulation):
 
         value = (best_dist - new_distance) * multiplier
 
-        if (value < 0):
+        if value < 0:
             value *= 3
 
         return value
@@ -141,11 +149,11 @@ if __name__ == "__main__":
     epsilon_dec=0.992
 
 
-    heuristic_factor = 50
-    dawdle_punishment = -100
+    heuristic_factor = 5
+    straight_line_reward = 10
 
-    ddqn = DDQN(lr, gamma, batch_size=200, layers=(64,64,64,64), state_size=11, action_size=15, replace_target=7, regularization_strength=0.0612)
-    memory = Memory(250_000, state_size=11)
+    ddqn = DDQN(lr, gamma, batch_size=200, layers=(64,128,128,64), state_size=12, action_size=15, replace_target=7, regularization_strength=0.0612)
+    memory = Memory(250_000, state_size=12)
 
     episodes_per_training = 100
     trainings_per_world = 100
@@ -160,7 +168,10 @@ if __name__ == "__main__":
 
 
     for _ in range(num_worlds):
-        terrain_data, terrain_height = world_data_extractor.run()
+        # terrain_data, terrain_height = world_data_extractor.run()
+        dic = helper.unpickle("terrain_data.pck")
+        terrain_data = dic["terrain_data"]
+        terrain_height = dic["starting_height"]
 
         # terrain_data, terrain_height = helper.create_custom_world(3, 3, [(3, "air"), (5, "stone") ,(2,"diamond_ore")])
         terrain_height -= 2
@@ -176,7 +187,9 @@ if __name__ == "__main__":
             
             diamonds_sum = 0
             best_diamonds = 0 
-            
+
+            best_reward = 0
+            reward_sum = 0
             #PER TRAINING SESSION
             for episode in range(episodes_per_training): 
                 
@@ -192,12 +205,7 @@ if __name__ == "__main__":
                 if print_statistics:
                     epsilon = 0
 
-                prev_loc = None
-                prev_prev_loc = None
-
                 for step in range(steps_per_simulation): # Simulating a single world
-                    
-                    loc = sim.agent_xyz()
 
                     state = sim.get_current_state()
 
@@ -206,20 +214,30 @@ if __name__ == "__main__":
 
                     heuristic_diamond = sim.diamond_heuristic(action, heuristic_factor)
                     
+                    
+
                     reward, dead = sim.get_reward(state, action)
                     new_state = sim.get_current_state()
 
-                    #add heuristic
-                    if reward == 0: # So other ores aren't weighted negatively
+
+                    #diamond heuristic
+
+                    d_h = reward == 0
+                    if d_h: # So other ores aren't weighted negatively
                         reward += heuristic_diamond
 
-                    # same place heuristic
-                    if (loc == prev_prev_loc):
-                        reward += dawdle_punishment
-                    
-                    prev_prev_loc = prev_loc
-                    prev_loc = loc
+                    # Straight line heuristic
+                    s_l_r = action[0] != 'M' and state[10] == action and action != "U"
+                    if s_l_r:
+                        reward += straight_line_reward
+
+                    if epsilon == 0:
+                        print(reward, heuristic_diamond * d_h, straight_line_reward * s_l_r)
      
+                    reward_sum += reward
+                    if reward > best_reward:
+                        best_reward = reward
+
                     #adjust height
                     state[-1] = state[-1] // HEIGHT_MOD
                     new_state[-1] = new_state[-1] // HEIGHT_MOD
@@ -227,13 +245,12 @@ if __name__ == "__main__":
                     done = dead or step == steps_per_simulation - 1
                     memory.store((state, action, reward, new_state, done))
 
-                    
-
                     if dead:
                         break
 
                 # print(episode)
                 epsilon = stored_epsilon
+
 
                 diamonds_found = sim.agent.inventory["diamond_ore"]
                 diamonds_sum += diamonds_found
@@ -245,9 +262,12 @@ if __name__ == "__main__":
                 if print_statistics:
                     print()
                     print("Episode:", episode_counter)
-                    print("\tMost diamonds found (per episode):", best_diamonds)
+                    print("\tMost diamonds found (per 100 episode):", best_diamonds)
                     print("\tAverage diamonds mined:", diamonds_sum / episodes_per_training)
-                    print("\tBest policy: ", diamonds_found)
+                    print("\tBest diamond policy (ep=0): ", diamonds_found)
+                    print("\tAverage Reward:", reward_sum/episodes_per_training)
+                    print("\tBest Reward (per 100 episodes):", best_reward)
+                    print("\tBest Reward Policy (ep=0):", reward)
                     print("\tEpsilon:", epsilon)
                     print("\tInventory: ", sim.agent.inventory)
 

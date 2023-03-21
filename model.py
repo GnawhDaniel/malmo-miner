@@ -101,9 +101,9 @@ class DDQN:
             # Brute force replace strings with enumerated values
             def replace(array, map_object):
                 for i in range(len(array)):
-                    for j in range(len(array[i])):
+                    for j in range(len(array[i])-1):
                         array[i, j] = map_object[array[i, j]]
-
+                    array[i, len(array[0])-1] = ACTION_MAP[array[i, len(array[0])-1]] # Change previous move to int
 
             replace(state[:, :-1], BLOCK_MAP)
             replace(new_state[:, :-1], BLOCK_MAP)
