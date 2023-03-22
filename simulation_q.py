@@ -14,7 +14,7 @@ class Agent:
     NOT_MINEABLE = {"air", "lava", "flowing_lava", "water", "flowing_water", "bedrock"}
     EXCLUSION = NOT_MINEABLE.union(set(REWARD_TABLE.keys()))
     DEATH_VALUE = -1000
-    MOVE_PENALTY = 0
+    MOVE_PENALTY = -5
 
     def __init__(self, x, y, z) -> None:
         self.x, self.height, self.z = x, y, z
@@ -35,6 +35,7 @@ class Agent:
         elif direction == "U":
             self.height += 1
 
+    
     def get_possible_moves(self, state):
         """
         The x-axis indicates the player's distance east (positive) or west (negative) of the origin point—i.e., the longitude,
@@ -325,7 +326,7 @@ class Simulation:
             FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
                             if type(self.closest_diamond) != type(None) and block_mined == self.closest_diamond:
             """
-            if type(self.closest_diamond) != type(None) and block_mined == self.closest_diamond:
+            if type(self.closest_diamond) != type(None) and not np.any(temp - self.closest_diamond):
                 self.closest_diamond = None
 
             # if block == "diamond_ore":
@@ -394,7 +395,7 @@ class Simulation:
     def agent_move(self, x, y, z):
         self.agent.x += x
         self.agent.height += y
-        self.agent.x += z
+        self.agent.z += z
 
         #change
         return self.fall() #falls, whether it died
