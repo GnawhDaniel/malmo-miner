@@ -55,7 +55,7 @@ def get_current_state(y,x,z,height,terrain_data) -> "state":
                 block += i
                 break
         if len(block) == 4:
-            block += temp_see[0]
+            block = 'air'
 
         state_space.append(block)
 
@@ -82,7 +82,7 @@ def get_current_state(y,x,z,height,terrain_data) -> "state":
                 block += i
                 break
         if len(block) == 4:
-            block += temp_see[0]
+            block = 'air'
 
         state_space.append(block)
     y-=1
@@ -109,7 +109,7 @@ def get_current_state(y,x,z,height,terrain_data) -> "state":
                 block += i
                 break
         if len(block) == 4:
-            block += temp_see[0]
+            block = 'air'
 
         state_space.append(block)
 
@@ -136,7 +136,7 @@ def get_current_state(y,x,z,height,terrain_data) -> "state":
                 block += i
                 break
         if len(block) == 4:
-            block += temp_see[0]
+            block = 'air'
 
         state_space.append(block)
     y -= 1
@@ -163,7 +163,7 @@ def get_current_state(y,x,z,height,terrain_data) -> "state":
                 block += i
                 break
         if len(block) == 4:
-            block += temp_see[0]
+            block = 'air'
 
         state_space.append(block)
 
@@ -190,7 +190,7 @@ def get_current_state(y,x,z,height,terrain_data) -> "state":
                 block += i
                 break
         if len(block) == 4:
-            block += temp_see[0]
+            block = 'air'
     y -= 1
 
     state_space.append(block)
@@ -219,7 +219,7 @@ def get_current_state(y,x,z,height,terrain_data) -> "state":
                 block += i
                 break
         if len(block) == 4:
-            block += temp_see[0]
+            block = "air"
 
         state_space.append(block)
 
@@ -246,7 +246,7 @@ def get_current_state(y,x,z,height,terrain_data) -> "state":
                 block += i
                 break
         if len(block) == 4:
-            block += temp_see[0]
+            block = "air"
 
         state_space.append(block)
     y -= 1
@@ -273,7 +273,7 @@ def get_current_state(y,x,z,height,terrain_data) -> "state":
                 block += i
                 break
         if len(block) == 4:
-            block += temp_see[0]
+            block = "air"
 
         state_space.append(block)
 

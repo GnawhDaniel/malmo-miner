@@ -5,10 +5,10 @@ import time
 import random
 import json
 import numpy as np
-from api_helper import get_current_state
+from api_helper import get_current_state,EXCLUSION
 
 #change N/S, check wheter E/w is correct
-def move(r_move):
+def move(r_move,agent_host):
     if r_move == "N":
         agent_host.sendCommand("move -1")
         time.sleep(1)
@@ -35,7 +35,8 @@ def move(r_move):
         observations = json.loads(msg)
         agent_y = observations.get("YPos", None)
         new_height = agent_y
-        while new_height == agent_y:
+        count = 0
+        while new_height == agent_y and count<=20:
             agent_host.sendCommand("jump")
             agent_host.sendCommand("jump")
             agent_host.sendCommand("use 1")
@@ -44,13 +45,20 @@ def move(r_move):
             msg = world_state.observations[-1].text
             observations = json.loads(msg)
             new_height = observations.get("YPos", None)
+            count+=1
 
         agent_host.sendCommand("look -1")
         agent_host.sendCommand("look -1")
 
+def random_move():
+    ALL_MOVES = ["N", "S", "W", "E", "U"]
+    return ALL_MOVES[random.randint(0,len(ALL_MOVES)-1)]
+def random_min():
+    ALL_MOVES = ["M_NL", "M_NU", "M_EL", "M_EU", "M_SL", "M_SU", "M_WL", "M_WU", "M_U", "M_D"]
+    return ALL_MOVES[random.randint(0, len(ALL_MOVES) - 1)]
 
 
-def mine(r_move):
+def mine(r_move,agent_host):
     agent_host.sendCommand("hotbar.1 0")
     #mine down
     if r_move == 'M_D':
@@ -151,7 +159,7 @@ def mine(r_move):
         agent_host.sendCommand("look 1")
         time.sleep(0.5)
 
-def testing():
+def testing(agent_host):
     while 1:
         c = input("command")
         agent_host.sendCommand(c)
@@ -172,15 +180,16 @@ def get_mission_xml():
                         <ServerQuitWhenAnyAgentFinishes/>
                     </ServerHandlers>
                     </ServerSection>
-                    <AgentSection mode="Creative">
+                    <AgentSection mode="Survival">
                     <Name>MalmoTutorialBot</Name>
                     <AgentStart>
                         <Inventory>
-                            <InventoryItem slot="1" type="stone" quantity="64"/>
                             <InventoryItem slot="0" type="diamond_pickaxe"/>
+                            <InventoryItem slot="1" type="stone" quantity="64"/>
                         </Inventory>
                     </AgentStart>
                     <AgentHandlers>
+                        <ChatCommands />
                         <InventoryCommands />
                         <ObservationFromFullStats/>
                         <DiscreteMovementCommands />
@@ -193,61 +202,74 @@ def get_mission_xml():
                     </AgentHandlers>
                     </AgentSection>
                 </Mission>'''
+def print_inventory(agent_host):
+    agent_host.sendCommand("chat /clear @p[scores={inventory_min=1..}]")
 
 
-# Create the agent host
-agent_host = MalmoPython.AgentHost()
 
-# Parse the command-line arguments
-agent_host.parse(sys.argv)
+def single_world():
+    # Create the agent host
+    agent_host = MalmoPython.AgentHost()
+    # Parse the command-line arguments
+    agent_host.parse(sys.argv)
 
-# Get the mission XML and create a mission
-mission_xml = get_mission_xml()
-mission = MalmoPython.MissionSpec(mission_xml, True)
-mission_record = MalmoPython.MissionRecordSpec()
+    # Get the mission XML and create a mission
+    mission_xml = get_mission_xml()
+    mission = MalmoPython.MissionSpec(mission_xml, True)
+    mission_record = MalmoPython.MissionRecordSpec()
 
-# Start the mission
-max_retries = 3
-for retry in range(max_retries):
-    try:
-        agent_host.startMission(mission, mission_record)
-        break
-    except RuntimeError as e:
-        if retry == max_retries - 1:
-            print("Error starting mission:", e)
-            exit(1)
-        else:
-            time.sleep(2)
+    # Start the mission
+    max_retries = 3
+    for retry in range(max_retries):
+        try:
+            agent_host.startMission(mission, mission_record)
+            break
+        except RuntimeError as e:
+            if retry == max_retries - 1:
+                print("Error starting mission:", e)
+                exit(1)
+            else:
+                time.sleep(2)
 
-# Wait for the mission to start
-print("Waiting for the mission to start")
-world_state = agent_host.getWorldState()
-while not world_state.has_mission_begun:
-    time.sleep(0.1)
+    # Wait for the mission to start
+    print("Waiting for the mission to start")
     world_state = agent_host.getWorldState()
+    while not world_state.has_mission_begun:
+        time.sleep(0.1)
+        world_state = agent_host.getWorldState()
+
+    #agent_host.sendCommand("chat /give @p minecraft:diamond_pickaxe{Enchantments:[{id:efficiency,lvl:5},{id:unbreaking,lvl:3},{id:mending,lvl:1},{id:fortune,lvl:3}]} 1")
 
 
-import json
+    x = y = z = 0
+    min_x = min_z = -5
+    max_x = max_z = 5
+    min_y = -1
+    max_y = 6
+    # S
+    #W  E
+    # N
+    time.sleep(0.5)
+    b = random.randint(0,1)
+    if b:
+        move(random_move(), agent_host)
+    else:
+        move(random_min(),agent_host)
 
-x = y = z = 0
-min_x = min_z = -5
-max_x = max_z = 5
-min_y = -1
-max_y = 6
-# S
-#W  E
-# N
 
-max_step = 200
-moving_cause = 2
-mining_cause = 1
-while max_step >= 0:
     max_step = 200
     moving_cause = 2
     mining_cause = 1
     while max_step >= 0:
+        print(max_step)
         world_state = agent_host.getWorldState()
-        if world_state.number_of_observations_since_last_state > 0:
+
+        if b:
+            move(random_move(), agent_host)
+        else:
+            move(random_min(), agent_host)
+
+        if world_state.number_of_observations_since_last_state > 0 and True:
             msg = world_state.observations[-1].text
             observations = json.loads(msg)
 
@@ -256,20 +278,25 @@ while max_step >= 0:
             #tranfer to np array
             terrain_data = np.array(blocks_around_agent)
             terrain_data = terrain_data.reshape((max_y - min_y + 1, max_z - min_z + 1, max_x - min_x + 1))
-
+            terrain_data[~np.isin(terrain_data, list(EXCLUSION))] = "stone"
             agent_y = observations.get("YPos", None)
-
+            #print(terrain_data)
             print(get_current_state(1,5,5,agent_y,terrain_data))
 
-        max_step -= 1
-        time.sleep(10)
+        max_step -= 5
 
-    # send_move to NN
 
-# Wait for the mission to end
-print("Waiting for the mission to end")
-while world_state.is_mission_running:
-    time.sleep(0.1)
-    world_state = agent_host.getWorldState()
 
-print("Mission ended")
+
+        # send_move to NN
+
+
+    # Wait for the mission to end
+    print("Waiting for the mission to end")
+    while world_state.is_mission_running:
+        time.sleep(0.1)
+        world_state = agent_host.getWorldState()
+
+    print("Mission ended")
+
+single_world()
