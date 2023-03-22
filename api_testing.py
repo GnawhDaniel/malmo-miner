@@ -10,27 +10,15 @@ from api_helper import get_current_state,EXCLUSION
 from model import DDQN
 
 #change N/S, check wheter E/w is correct
-def move(r_move,agent_host):
-    sleep_time = 1
-    if r_move == "N":
-        agent_host.sendCommand("move -1")
-        time.sleep(sleep_time)
-    if r_move == "S":
-        agent_host.sendCommand("move 1")
-        time.sleep(sleep_time)
-    if r_move == "W":
-        agent_host.sendCommand("strafe 1")
-        time.sleep(sleep_time)
-    if r_move == "E":
-        agent_host.sendCommand("strafe -1")
-        time.sleep(sleep_time)
+def move(r_move, agent_host):
+    
+    sleep_time = 1 
     if r_move == "U":
         agent_host.sendCommand("jump")
         agent_host.sendCommand("jump")
         time.sleep(1)
         # this is not working
-        agent_host.sendCommand("look 1")
-        agent_host.sendCommand("look 1")
+        face_pitch(90, agent_host)
         agent_host.sendCommand("hotbar.2 1")
         #check height
         world_state = agent_host.getWorldState()
@@ -49,9 +37,15 @@ def move(r_move,agent_host):
             observations = json.loads(msg)
             new_height = observations.get("YPos", None)
             count+=1
+        agent_host.sendCommand("hotbar.1 1")
 
-        agent_host.sendCommand("look -1")
-        agent_host.sendCommand("look -1")
+
+    else:
+        face_pitch(0, agent_host)
+        face_direction(r_move, agent_host)
+        time.sleep(sleep_time)
+        agent_host.sendCommand("move 1")
+        time.sleep(sleep_time)
 
 def random_move():
     ALL_MOVES = ["N", "S", "W", "E", "U"]
@@ -60,9 +54,22 @@ def random_min():
     ALL_MOVES = ["M_NL", "M_NU", "M_EL", "M_EU", "M_SL", "M_SU", "M_WL", "M_WU", "M_U", "M_D"]
     return ALL_MOVES[random.randint(0, len(ALL_MOVES) - 1)]
 
+def face_direction(r_move, agent_host):
+    direction = r_move[0] if r_move[0] != "M" else r_move[2]
+  
+    coord = {
+        "S": 0,
+        "E": 270,
+        "W": 90,
+        "N": 180,
+    }
 
+    agent_host.sendCommand(f"setYaw {coord[direction]}")
 
-
+def face_pitch(pitch, agent_host):
+    agent_host.sendCommand(f"setPitch {pitch}")
+    
+    
 def turn(direction, agent_host):
     #neg = int(degrees / abs(degrees))
     thresh = 0.5
@@ -98,169 +105,39 @@ def turn(direction, agent_host):
     
     agent_host.sendCommand("turn 0")
 
-def pitch(degrees, agent_host):
-    #neg = int(degrees / abs(degrees))
-    thresh = 2
 
-    world_state = agent_host.peekWorldState()
-    pp_text = world_state.observations[-1].text
-    pp_dict = json.loads(pp_text)
-    
-    if pp_dict['Pitch'] - degrees < 0:
-        agent_host.sendCommand("pitch 0.3")
-    else:
-        agent_host.sendCommand("pitch -0.3")
-
-    while True:
-        world_state = agent_host.peekWorldState()
-          # most horrible api in the galaxy award
-        obs_dict = None
-        if world_state.is_mission_running and world_state.number_of_observations_since_last_state > 0:
-            obs_text = world_state.observations[-1].text
-            obs_dict = json.loads(obs_text)
-        
-        pitch = obs_dict['Pitch'] if obs_dict is not None else None
-        print(pitch)
-        # 90 is straight down
-        # -90 up
-        if pitch != None and abs(degrees - pitch) < thresh:
-            break
-    
-    agent_host.sendCommand("pitch 0")
-
-def pitch(degrees, agent_host):
-    #neg = int(degrees / abs(degrees))
-    thresh = 2
-
-    world_state = agent_host.peekWorldState()
-    pp_text = world_state.observations[-1].text
-    pp_dict = json.loads(pp_text)
-    
-    if pp_dict['Pitch'] - degrees < 0:
-        agent_host.sendCommand("pitch 0.3")
-    else:
-        agent_host.sendCommand("pitch -0.3")
-
-    while True:
-        world_state = agent_host.peekWorldState()
-          # most horrible api in the galaxy award
-        obs_dict = None
-        if world_state.is_mission_running and world_state.number_of_observations_since_last_state > 0:
-            obs_text = world_state.observations[-1].text
-            obs_dict = json.loads(obs_text)
-        
-        pitch = obs_dict['Pitch'] if obs_dict is not None else None
-        print(pitch)
-        # 90 is straight down
-        # -90 up
-        if pitch != None and abs(degrees - pitch) < thresh:
-            break
-    
-    agent_host.sendCommand("pitch 0")
-
-
-
-def mine(r_move,agent_host):
+def mine(r_move, agent_host):
     print("HERE")
     sleep_time = 0.5
     agent_host.sendCommand("hotbar.1 0")
     #mine down
+
     if r_move == 'M_D':
-        agent_host.sendCommand("setPitch 90")
+        face_pitch(90, agent_host)
         time.sleep(sleep_time)
         agent_host.sendCommand("attack 1")
         time.sleep(sleep_time)
-        agent_host.sendCommand("setPitch 0")
-        time.sleep(sleep_time)
-    #mine south
-    if r_move == "M_SU":
-        agent_host.sendCommand("attack 1")
-        time.sleep(sleep_time)
-    if r_move == "M_SL":
-        # agent_host.sendCommand("look 1")
-        agent_host.sendCommand("setPitch 60")
+    elif r_move == "M_U":
+        face_pitch(-90, agent_host)
         time.sleep(sleep_time)
         agent_host.sendCommand("attack 1")
         time.sleep(sleep_time)
-        # agent_host.sendCommand("look -1")
-        agent_host.sendCommand("setPitch 0")
-    #mine north
-    if r_move == "M_NU":
-        agent_host.sendCommand("turn 1")
+    else:#OTHER MOVES
+        face_direction(r_move, agent_host)
         time.sleep(sleep_time)
-        agent_host.sendCommand("turn 1")
-        time.sleep(sleep_time)
-        agent_host.sendCommand("attack 1")
-        time.sleep(sleep_time)
-        agent_host.sendCommand("turn 1")
-        time.sleep(sleep_time)
-        agent_host.sendCommand("turn 1")
-        time.sleep(sleep_time)
-    if r_move == "M_NL":
-        agent_host.sendCommand("turn 1")
-        time.sleep(sleep_time)
-        agent_host.sendCommand("turn 1")
-        time.sleep(sleep_time)
-        agent_host.sendCommand("setPitch 60")
+        if r_move[3] == "L":
+            face_pitch(60,agent_host)
+        else:
+            face_pitch(0, agent_host)
+            
         time.sleep(sleep_time)
         agent_host.sendCommand("attack 1")
-        time.sleep(sleep_time)
-        agent_host.sendCommand("setPitch 0")
-        time.sleep(sleep_time)
-        agent_host.sendCommand("turn 1")
-        time.sleep(sleep_time)
-        agent_host.sendCommand("turn 1")
-        time.sleep(sleep_time)
-    #mine west The x-axis indicates the player's distance east (positive)  or west (negative) of the origin point—i.e., the longitude,
-    if r_move == "M_WU":
-        agent_host.sendCommand("turn 1")
-        time.sleep(sleep_time)
-        agent_host.sendCommand("attack 1")
-        time.sleep(sleep_time)
-        agent_host.sendCommand("turn -1")
-        time.sleep(sleep_time)
-    if r_move == "M_WL":
-        agent_host.sendCommand("turn 1")
-        time.sleep(sleep_time)
-        agent_host.sendCommand("setPitch 60")
-        time.sleep(sleep_time)
-        agent_host.sendCommand("attack 1")
-        time.sleep(sleep_time)
-        agent_host.sendCommand("setPitch 0")
-        time.sleep(sleep_time)
-        agent_host.sendCommand("turn -1")
-        time.sleep(sleep_time)
-    #mine east
-    if r_move == "M_EU":
-        agent_host.sendCommand("turn -1")
-        time.sleep(sleep_time)
-        agent_host.sendCommand("attack 1")
-        time.sleep(sleep_time)
-        agent_host.sendCommand("turn 1")
-        time.sleep(sleep_time)
-    if r_move == "M_EL":
-        agent_host.sendCommand("turn -1")
-        time.sleep(sleep_time)
-        agent_host.sendCommand("setPitch 60")
-        time.sleep(sleep_time)
-        agent_host.sendCommand("attack 1")
-        time.sleep(sleep_time)
-        agent_host.sendCommand("setPitch 0")
-        time.sleep(sleep_time)
-        agent_host.sendCommand("turn 1")
-        time.sleep(sleep_time)
-    #mine up
-    if r_move == "M_U":
-        agent_host.sendCommand("setPitch -90")
-        time.sleep(sleep_time)
-        agent_host.sendCommand("attack 1")
-        time.sleep(sleep_time)
-        agent_host.sendCommand("setPitch 0")
         time.sleep(sleep_time)
 
-def make_move(r_move,agent_host):
+
+def make_move(r_move, agent_host):
     if r_move[0] == "M":
-        mine(r_move,agent_host)
+        mine(r_move, agent_host)
     else:
         move(r_move, agent_host)
 
@@ -329,7 +206,7 @@ def single_world():
 
     # Initialize GetPolicy class
     ddqn = DDQN(layers=(64,256,128,128,64))        # TODO: Load ddqn network  
-    ddqn.load_model(filename="weights_save_superflat\super_flat NN at 14 trainings.h5")
+    ddqn.load_model(filename="C:\\Users\\danie\\Desktop\\weights_save_random\\gen NN at 24 trainings.h5")
     best_policy = BestPolicy(ddqn)
 
     # Get the mission XML and create a mission
@@ -374,7 +251,7 @@ def single_world():
     agent_host.sendCommand("jump 1")
     time.sleep(0.3)
     agent_host.sendCommand("jump 0")
-
+    time.sleep(1.5)
     # agent_host.sendCommand("setPitch 30")
 
     # pitch(30, agent_host)
@@ -405,10 +282,10 @@ def single_world():
             last_move = state[10]
 
             # Choose move
-            chosen_move = best_policy.choose_move(state=state)
+            chosen_move = best_policy.choose_random_move(state)  #.choose_move(state=state)
             agent_host.sendCommand(f'chat {max_step} {chosen_move}')
+            
             # Move agent
-
             make_move(chosen_move, agent_host)
 
             max_step -= 1

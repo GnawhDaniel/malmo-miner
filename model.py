@@ -49,7 +49,7 @@ class DDQN:
         self.layers = layers
         self.action_size = action_size
         self.state_size = state_size
-        self.batch_size=batch_size
+        self.batch_size = batch_size
         self.replace_target = replace_target
         self.counter = 0 # Counter for replace_target
         self.regularization_strength = regularization_strength
@@ -148,7 +148,7 @@ class DDQN:
 
             batch_index = np.arange(self.batch_size, dtype=np.int32) if not single else np.array([0])
 
-            #UPDATE FUNCTION
+            # UPDATE FUNCTION
             q_target[batch_index, action_indices] = reward + (self.gamma * q_next[batch_index, max_actions.astype(int)]) #  * np.invert(done)
             
             self.q_eval.fit(state, q_target, verbose=0)

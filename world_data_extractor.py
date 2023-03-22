@@ -49,7 +49,7 @@ def run():
               
                     <ServerSection>
                     <ServerHandlers>
-                        <DefaultWorldGenerator/>
+                        <DefaultWorldGenerator seed="103660794"/>
                         <ServerQuitWhenAnyAgentFinishes/>
                     </ServerHandlers>
                     </ServerSection>
@@ -161,6 +161,7 @@ def run():
             #end the mission when world extracted
             if (height <= 6): # Where bedrock starts
                 # world_state.is_mission_running = False
+                agent_host.sendCommand("quit")
                 break
 
 
@@ -185,5 +186,4 @@ def run():
     terrain_data = np.flipud(terrain_data)
     save_dict = {"terrain_data": terrain_data, "starting_height": starting_height+AIR_BUFFER}
     pickilizer(save_dict, "terrain_data.pck")
-
     return terrain_data, starting_height + AIR_BUFFER

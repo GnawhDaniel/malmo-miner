@@ -149,18 +149,18 @@ if __name__ == "__main__":
     # ax.set_ylim(0, 20)
     line, = ax.plot([], [], lw=2)
 
-    lr = 0.005
+    lr = 0.007
     gamma = 0.95 # 0.95
-    layers = (64,64,64,64)
-    batch_size = 500
+    layers = (64, 256, 128,64)
+    batch_size = 50_000
     replace_target = 4
-    regularization_strength = 0.05
+    regularization_strength = 0.001
     memory_size = 1_000_000
     
     
     epsilon = 0.99
     epsilon_min=0.1
-    epsilon_dec=0.96
+    epsilon_dec=0.976
 
 
     target_reward = 400
@@ -175,7 +175,7 @@ if __name__ == "__main__":
     trainings_per_world = 100
     num_worlds = 10
 
-    steps_per_simulation = 200
+    steps_per_simulation = 500
 
     training_counter = 0
     trainings_per_save = 10
@@ -209,7 +209,7 @@ if __name__ == "__main__":
     best_poicy = float('-inf')
 
     for _ in range(num_worlds):
-        # terrain_data, terrain_height = world_data_extractor.run()
+        # world_data_extractor.run() # To get different "worlds", just teleport agent to another chunk on the same world really high up, then call fall
         dic = helper.unpickle("terrain_data.pck")
         terrain_data = dic["terrain_data"]
         terrain_height = dic["starting_height"]
@@ -297,7 +297,9 @@ if __name__ == "__main__":
 
                     if dead:
                         break
-                
+
+                policy_history.append(reward_cumul)
+
                 diamonds_found = sim.agent.inventory["diamond_ore"]
                 diamonds_sum += diamonds_found
 
@@ -338,6 +340,8 @@ if __name__ == "__main__":
 
                         
             # #TRAIN
+            print("Episode:", episode_counter)
+            print("Training...")
             ddqn.train(memory, ACTION_MAP, BLOCK_MAP, sim)
 
             # Decrease epsilon every training
@@ -347,9 +351,7 @@ if __name__ == "__main__":
 
       
             # # Adjusting Epsilon based on Rewards
-            # policy_history.append(reward_cumul)
-            # print(len(policy_history))
-            # if len(policy_history) >= 5: #Update every 5 x 100 episodes
+            # if len(policy_history) >= 500: #Update every 5 x 100 episodes
 
             #     # Rolling average
             #     avg = sum(policy_history) / len(policy_history) 
@@ -370,10 +372,10 @@ if __name__ == "__main__":
             #     if epsilon < epsilon_min:
             #         epsilon = epsilon_min
     
-            # if epsilon > .99:
-            #     epsilon = .99
-            # elif epsilon < epsilon_min:
-            #     epsilon = epsilon_min
+            if epsilon > .99:
+                epsilon = .99
+            elif epsilon < epsilon_min:
+                epsilon = epsilon_min
 
             print(epsilon)
 

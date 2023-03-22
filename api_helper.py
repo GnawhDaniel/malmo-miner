@@ -16,7 +16,7 @@ class BestPolicy:
     def choose_random_move(self, state):
         possible_moves = self.get_possible_moves(state)
 
-        return random.choose(possible_moves)
+        return random.choice(possible_moves)
     
 
     def choose_move(self, state):
