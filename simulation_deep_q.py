@@ -97,15 +97,15 @@ class Simulation_deep_q(Simulation):
 
     def diamond_heuristic(self, move, multiplier=1.5):
         loc = np.array([*self.agent_xyz()])
+        loc_eyes = loc
+        loc_eyes[1] += 1
         
         if type(self.closest_diamond) == type(None):
             best = self.diamond_locations[0]
             best_dist = np.Inf
         
             self.diamond_locations -= loc
-
             distances = np.linalg.norm(self.diamond_locations, axis=1)
-
             self.diamond_locations += loc
 
             for i in range(len(self.diamond_locations)):
@@ -118,22 +118,18 @@ class Simulation_deep_q(Simulation):
             
             self.closest_diamond = best
 
-        best_dist = np.linalg.norm(self.closest_diamond - loc)
+        
+        best_dist = min(np.linalg.norm(self.closest_diamond - loc), np.linalg.norm(self.closest_diamond - loc_eyes))
             
         #CALCULATE HEURISTIC BASED ON THE BEST DIAMOND LOCATION
         relative_coords = {"N": (0, 0, -1),"S":(0, 0, 1),"W":(-1, 0, 0),"E":(1, 0, 0),"U":(0, 1, 0), "D": (0, -1, 0)}
         
         updated_move = loc + relative_coords[move[0]] if move[0] != "M" else loc + relative_coords[move[2]]
+        updated_move_eyes = loc_eyes + relative_coords[move[0]] if move[0] != "M" else loc_eyes + relative_coords[move[2]]
 
-        new_distance = np.linalg.norm(updated_move - self.closest_diamond)
+        new_distance = min(np.linalg.norm(updated_move - self.closest_diamond), np.linalg.norm(updated_move_eyes - self.closest_diamond))
 
         value = (best_dist - new_distance) * multiplier
-
-        #if best_dist < 3:
-        #    value = 0
-
-        #if value < 0:
-        #    value *= 3
 
         return value
 
@@ -179,7 +175,7 @@ if __name__ == "__main__":
 
     episode_counter = 0
 
-    file_directory = "E:\\weights_save_random\\" 
+    file_directory = "weights_save_random\\" 
     files = glob.glob(f'{file_directory}/*')
     for f in files:
         os.remove(f)
@@ -207,12 +203,12 @@ if __name__ == "__main__":
 
     for _ in range(num_worlds):
         # terrain_data, terrain_height = world_data_extractor.run()
-        dic = helper.unpickle("terrain_data.pck")
-        terrain_data = dic["terrain_data"]
-        terrain_height = dic["starting_height"]
+        # dic = helper.unpickle("terrain_data.pck")
+        # terrain_data = dic["terrain_data"]
+        # terrain_height = dic["starting_height"]
 
-        # terrain_data, terrain_height = helper.create_custom_world(50, 50, [(3, "air"), (5, "stone") ,(2,"diamond_ore"), (5, "stone")])
-        terrain_height -= 2
+        terrain_data, terrain_height = helper.create_custom_world(50, 50, [(3, "air"), (5, "stone") ,(2,"diamond_ore"), (5, "stone")])
+        terrain_height -= 1
 
         sim = Simulation_deep_q(terrain_data, terrain_height)
         # sim.fall()
