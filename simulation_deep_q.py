@@ -118,16 +118,23 @@ class Simulation_deep_q(Simulation):
             
             self.closest_diamond = best
 
-        
-        best_dist = min(np.linalg.norm(self.closest_diamond - loc), np.linalg.norm(self.closest_diamond - loc_eyes))
-            
-        #CALCULATE HEURISTIC BASED ON THE BEST DIAMOND LOCATION
+        dist_eyes = np.linalg.norm(self.closest_diamond - loc_eyes)
+        dist_feet = np.linalg.norm(self.closest_diamond - loc)
+
         relative_coords = {"N": (0, 0, -1),"S":(0, 0, 1),"W":(-1, 0, 0),"E":(1, 0, 0),"U":(0, 1, 0), "D": (0, -1, 0)}
         
-        updated_move = loc + relative_coords[move[0]] if move[0] != "M" else loc + relative_coords[move[2]]
-        updated_move_eyes = loc_eyes + relative_coords[move[0]] if move[0] != "M" else loc_eyes + relative_coords[move[2]]
+        best_dist = min(dist_feet, dist_eyes)
 
-        new_distance = min(np.linalg.norm(updated_move - self.closest_diamond), np.linalg.norm(updated_move_eyes - self.closest_diamond))
+        updated_move = loc + relative_coords[move[0]] if move[0] != "M" else loc + relative_coords[move[2]]
+        updated_move = None
+        if best_dist == dist_feet:
+            updated_move = loc + relative_coords[move[0]] if move[0] != "M" else loc + relative_coords[move[2]]
+        else:
+            updated_move = loc_eyes + relative_coords[move[0]] if move[0] != "M" else loc_eyes + relative_coords[move[2]]
+        #CALCULATE HEURISTIC BASED ON THE BEST DIAMOND LOCATION
+
+
+        new_distance = np.linalg.norm(updated_move - self.closest_diamond)
 
         value = (best_dist - new_distance) * multiplier
 
@@ -144,10 +151,10 @@ if __name__ == "__main__":
 
     lr = 0.005
     gamma = 0.95 # 0.95
-    layers = (64,256,256,128,64)
-    batch_size = 10_000
+    layers = (64,64,64,64)
+    batch_size = 500
     replace_target = 4
-    regularization_strength = 0.1
+    regularization_strength = 0.05
     memory_size = 1_000_000
     
     
@@ -168,7 +175,7 @@ if __name__ == "__main__":
     trainings_per_world = 100
     num_worlds = 10
 
-    steps_per_simulation = 500
+    steps_per_simulation = 200
 
     training_counter = 0
     trainings_per_save = 10
@@ -203,12 +210,12 @@ if __name__ == "__main__":
 
     for _ in range(num_worlds):
         # terrain_data, terrain_height = world_data_extractor.run()
-        # dic = helper.unpickle("terrain_data.pck")
-        # terrain_data = dic["terrain_data"]
-        # terrain_height = dic["starting_height"]
+        dic = helper.unpickle("terrain_data.pck")
+        terrain_data = dic["terrain_data"]
+        terrain_height = dic["starting_height"]
 
-        terrain_data, terrain_height = helper.create_custom_world(50, 50, [(3, "air"), (5, "stone") ,(2,"diamond_ore"), (5, "stone")])
-        terrain_height -= 1
+        # terrain_data, terrain_height = helper.create_custom_world(400, 400, [(3, "air"), (5, "stone") ,(2,"diamond_ore"), (5, "stone")])
+        terrain_height -= 2
 
         sim = Simulation_deep_q(terrain_data, terrain_height)
         # sim.fall()
@@ -333,40 +340,40 @@ if __name__ == "__main__":
             # #TRAIN
             ddqn.train(memory, ACTION_MAP, BLOCK_MAP, sim)
 
-            # # Decrease epsilon every training
-            # epsilon *= epsilon_dec
-            # if epsilon < epsilon_min:
-            #     epsilon = epsilon_min
+            # Decrease epsilon every training
+            epsilon *= epsilon_dec
+            if epsilon < epsilon_min:
+                epsilon = epsilon_min
 
       
-            # Adjusting Epsilon based on Rewards
-            policy_history.append(reward_cumul)
-            print(len(policy_history))
-            if len(policy_history) >= 5: #Update every 5 x 100 episodes
+            # # Adjusting Epsilon based on Rewards
+            # policy_history.append(reward_cumul)
+            # print(len(policy_history))
+            # if len(policy_history) >= 5: #Update every 5 x 100 episodes
 
-                # Rolling average
-                avg = sum(policy_history) / len(policy_history) 
-                print("Rolling Avg:", avg)
+            #     # Rolling average
+            #     avg = sum(policy_history) / len(policy_history) 
+            #     print("Rolling Avg:", avg)
             
-                # If rolling average is greater than some eps threshold, decrease eps
-                if avg > target_reward:
-                    print("Decrease")
-                    epsilon *= 0.4
-                else:
-                    # Else increase epsilon
-                    print("Increase")
-                    epsilon *= 1.2
-                policy_history.clear()
-            else:
-                # Decrease epsilon 
-                epsilon *= epsilon_dec
-                if epsilon < epsilon_min:
-                    epsilon = epsilon_min
+            #     # If rolling average is greater than some eps threshold, decrease eps
+            #     if avg > target_reward:
+            #         print("Decrease")
+            #         epsilon *= 0.4
+            #     else:
+            #         # Else increase epsilon
+            #         print("Increase")
+            #         epsilon *= 1.2
+            #     policy_history.clear()
+            # else:
+            #     # Decrease epsilon 
+            #     epsilon *= epsilon_dec
+            #     if epsilon < epsilon_min:
+            #         epsilon = epsilon_min
     
-            if epsilon > .99:
-                epsilon = .99
-            elif epsilon < epsilon_min:
-                epsilon = epsilon_min
+            # if epsilon > .99:
+            #     epsilon = .99
+            # elif epsilon < epsilon_min:
+            #     epsilon = epsilon_min
 
             print(epsilon)
 
