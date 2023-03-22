@@ -43,7 +43,7 @@ class Memory:
         return self.states[batch], self.actions[batch], self.rewards[batch], self.new_state[batch], self.terminals[batch] 
 
 class DDQN:
-    def __init__(self, lr, gamma, batch_size, layers=(256, 256), state_size=11, action_size=15, replace_target=5, regularization_strength=0.05, tau=0.01):
+    def __init__(self, lr=0.001, gamma=0.95, batch_size=512, layers=(256, 256), state_size=11, action_size=15, replace_target=5, regularization_strength=0.05, tau=0.01):
         self.lr = lr
         self.gamma = gamma
         self.layers = layers
@@ -173,6 +173,10 @@ class DDQN:
     def save_model(self, filename):
         self.q_eval.save(filename)
 
+
     def load_model(self, filename):
+        file = open(filename)
         self.q_eval = load_model(filename)
+        file.close()
         self.q_target = self.q_eval
+

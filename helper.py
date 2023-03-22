@@ -11,16 +11,18 @@ from keras.utils import to_categorical
 
 REWARD_TABLE = {
     "diamond_ore": 1000,
-    "emerald_ore": 500,
-    "redstone_ore": 100,
-    "lapis_ore": 100, 
-    "gold_ore": 100,
-    "iron_ore": 10,
-    "coal_ore": 5,
+    "emerald_ore": 50,
+    "redstone_ore": 20,
+    "lapis_ore": 10, 
+    "gold_ore": 30,
+    "iron_ore": 30,
+    "coal_ore": 30,
 }
 EXCLUSION = {"air", "lava", "flowing_lava", "water", "flowing_water", "bedrock"}.union(set(REWARD_TABLE.keys()))
 DEATH_VALUE = -1000
 ALL_MOVES = ["N","S","W","E","U","M_NL", "M_NU", "M_EL", "M_EU", "M_SL", "M_SU", "M_WL", "M_WU", "M_U", "M_D"]
+NOT_MINEABLE = {"air", "lava", "flowing_lava", "water", "flowing_water", "bedrock"}
+
 
 
 def pickilizer(obj, filename):
@@ -68,37 +70,37 @@ def get_grid_observation(world_state, name):
     return None, None
 
 
-def onehotencode():
-    # TODO: Change this implementation to One Hot Encoding
-    '''
-    with open("all_mc_blocks.txt", 'r') as f:
-        string = f.read().strip()
-        block_list = string.split(",")
+# def onehotencode():
+#     # TODO: Change this implementation to One Hot Encoding
+#     '''
+#     with open("all_mc_blocks.txt", 'r') as f:
+#         string = f.read().strip()
+#         block_list = string.split(",")
         
-    '''
+#     '''
     
-    block_list = ["stone", "air", "bedrock"]
+#     block_list = ["stone", "air", "bedrock"]
         
-    for block in REWARD_TABLE.keys():
-        block_list += block
-        block_list += "air+" + block
+#     for block in REWARD_TABLE.keys():
+#         block_list += block
+#         block_list += "air+" + block
     
-    BLOCK_MAP = {}
-    ACTION_MAP = {}
+#     BLOCK_MAP = {}
+#     ACTION_MAP = {}
 
-    actions = ["N","S","W","E","U","M_NL", "M_NU", "M_EL", "M_EU", "M_SL", "M_SU", "M_WL", "M_WU", "M_U", "M_D"]
+#     actions = ["N","S","W","E","U","M_NL", "M_NU", "M_EL", "M_EU", "M_SL", "M_SU", "M_WL", "M_WU", "M_U", "M_D"]
 
-    #ONE HOT
-    block_code = to_categorical([i for i in range(len(block_list))])
-    action_code = to_categorical([i for i in range(len(actions))])
+#     #ONE HOT
+#     block_code = to_categorical([i for i in range(len(block_list))])
+#     action_code = to_categorical([i for i in range(len(actions))])
 
-    for i in range(len(block_list)):
-        BLOCK_MAP[block_list[i]] = block_code[i]
+#     for i in range(len(block_list)):
+#         BLOCK_MAP[block_list[i]] = block_code[i]
     
-    for i in range(len(actions)):
-        ACTION_MAP[actions[i]] = action_code[i]
+#     for i in range(len(actions)):
+#         ACTION_MAP[actions[i]] = action_code[i]
 
-    return ACTION_MAP, BLOCK_MAP
+#     return ACTION_MAP, BLOCK_MAP
 
 def enumerate_one_hot():
     block_list = ["stone", "air", "bedrock" , "lava", "flowing_lava", "water", "flowing_water", "air+ore"]
@@ -114,7 +116,7 @@ def enumerate_one_hot():
 
     #ONE HOT
     block_code = np.array([i for i in range(len(block_list))], dtype=np.float32)
-    action_code = np.array([i for i in range(len(actions))], dtype=np.float32)
+    action_code = np.array([i+len(block_list) for i in range(len(actions))], dtype=np.float32) # add len block list to avoid conflicts in representation
 
     for i in range(len(block_list)):
         BLOCK_MAP[block_list[i]] = block_code[i]

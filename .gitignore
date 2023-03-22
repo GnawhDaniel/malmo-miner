@@ -5,6 +5,7 @@ __pycache__/
 *.pck
 logs/
 model/
+weights_save/
 
 # C extensions
 *.so

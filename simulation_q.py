@@ -11,10 +11,10 @@ from collections import defaultdict
 class Agent:
     # Constants      
     REWARD_TABLE = helper.REWARD_TABLE
-    NOT_MINEABLE = {"air", "lava", "flowing_lava", "water", "flowing_water", "bedrock"}
+    NOT_MINEABLE = helper.NOT_MINEABLE
     EXCLUSION = NOT_MINEABLE.union(set(REWARD_TABLE.keys()))
     DEATH_VALUE = -1000
-    MOVE_PENALTY = -5
+    MOVE_PENALTY = -0.25
 
     def __init__(self, x, y, z) -> None:
         self.x, self.height, self.z = x, y, z
