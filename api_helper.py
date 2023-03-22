@@ -1,6 +1,7 @@
 from helper import REWARD_TABLE, EXCLUSION
 import helper
 import numpy as np
+import random
 
 HEIGHT_MOD = 1
 
@@ -11,6 +12,12 @@ ALL_MOVES = ["N","S","W","E","U","M_NL", "M_NU", "M_EL", "M_EU", "M_SL", "M_SU",
 class BestPolicy:
     def __init__(self, ddqn) -> None:
         self.ddqn = ddqn
+
+    def choose_random_move(self, state):
+        possible_moves = self.get_possible_moves(state)
+
+        return random.choose(possible_moves)
+    
 
     def choose_move(self, state):
         possible_moves = self.get_possible_moves(state)
