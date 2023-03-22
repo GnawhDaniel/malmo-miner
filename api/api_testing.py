@@ -254,7 +254,7 @@ def single_world():
     if b:
         move(random_move(), agent_host)
     else:
-        move(random_min(),agent_host)
+        min(random_min(),agent_host)
 
 
     max_step = 200
@@ -269,7 +269,7 @@ def single_world():
         else:
             move(random_min(), agent_host)
 
-        if world_state.number_of_observations_since_last_state > 0 and True:
+        if world_state.number_of_observations_since_last_state > 0:
             msg = world_state.observations[-1].text
             observations = json.loads(msg)
 

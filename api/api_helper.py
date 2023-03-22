@@ -191,9 +191,12 @@ def get_current_state(y,x,z,height,terrain_data) -> "state":
                 break
         if len(block) == 4:
             block = 'air'
-    y -= 1
+        y -= 1
 
-    state_space.append(block)
+        try:
+            state_space.append(block)
+        except:
+            state_space.append("water")
 
 
 
@@ -221,7 +224,10 @@ def get_current_state(y,x,z,height,terrain_data) -> "state":
         if len(block) == 4:
             block = "air"
 
-        state_space.append(block)
+        try:
+            state_space.append(block)
+        except:
+            state_space.append("water")
 
     # West upper
     y += 1
