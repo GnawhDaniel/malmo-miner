@@ -166,25 +166,24 @@ def mine(r_move,agent_host):
     agent_host.sendCommand("hotbar.1 0")
     #mine down
     if r_move == 'M_D':
-        agent_host.sendCommand("look 1")
-        time.sleep(sleep_time)
-        agent_host.sendCommand("look 1")
+        agent_host.sendCommand("setPitch 90")
         time.sleep(sleep_time)
         agent_host.sendCommand("attack 1")
         time.sleep(sleep_time)
-        agent_host.sendCommand("look -1")
-        time.sleep(sleep_time)
-        agent_host.sendCommand("look -1")
+        agent_host.sendCommand("setPitch 0")
         time.sleep(sleep_time)
     #mine south
     if r_move == "M_SU":
         agent_host.sendCommand("attack 1")
+        time.sleep(sleep_time)
     if r_move == "M_SL":
-        agent_host.sendCommand("look 1")
+        # agent_host.sendCommand("look 1")
+        agent_host.sendCommand("setPitch 60")
         time.sleep(sleep_time)
         agent_host.sendCommand("attack 1")
         time.sleep(sleep_time)
-        agent_host.sendCommand("look -1")
+        # agent_host.sendCommand("look -1")
+        agent_host.sendCommand("setPitch 0")
     #mine north
     if r_move == "M_NU":
         agent_host.sendCommand("turn 1")
@@ -202,11 +201,11 @@ def mine(r_move,agent_host):
         time.sleep(sleep_time)
         agent_host.sendCommand("turn 1")
         time.sleep(sleep_time)
-        agent_host.sendCommand("look 1")
+        agent_host.sendCommand("setPitch 60")
         time.sleep(sleep_time)
         agent_host.sendCommand("attack 1")
         time.sleep(sleep_time)
-        agent_host.sendCommand("look -1")
+        agent_host.sendCommand("setPitch 0")
         time.sleep(sleep_time)
         agent_host.sendCommand("turn 1")
         time.sleep(sleep_time)
@@ -223,11 +222,11 @@ def mine(r_move,agent_host):
     if r_move == "M_WL":
         agent_host.sendCommand("turn 1")
         time.sleep(sleep_time)
-        agent_host.sendCommand("look 1")
+        agent_host.sendCommand("setPitch 60")
         time.sleep(sleep_time)
         agent_host.sendCommand("attack 1")
         time.sleep(sleep_time)
-        agent_host.sendCommand("look -1")
+        agent_host.sendCommand("setPitch 0")
         time.sleep(sleep_time)
         agent_host.sendCommand("turn -1")
         time.sleep(sleep_time)
@@ -242,25 +241,21 @@ def mine(r_move,agent_host):
     if r_move == "M_EL":
         agent_host.sendCommand("turn -1")
         time.sleep(sleep_time)
-        agent_host.sendCommand("look 1.5")
+        agent_host.sendCommand("setPitch 60")
         time.sleep(sleep_time)
         agent_host.sendCommand("attack 1")
         time.sleep(sleep_time)
-        agent_host.sendCommand("look -1.5")
+        agent_host.sendCommand("setPitch 0")
         time.sleep(sleep_time)
         agent_host.sendCommand("turn 1")
         time.sleep(sleep_time)
     #mine up
     if r_move == "M_U":
-        agent_host.sendCommand("look -1")
-        time.sleep(sleep_time)
-        agent_host.sendCommand("look -1")
+        agent_host.sendCommand("setPitch -90")
         time.sleep(sleep_time)
         agent_host.sendCommand("attack 1")
         time.sleep(sleep_time)
-        agent_host.sendCommand("look 1")
-        time.sleep(sleep_time)
-        agent_host.sendCommand("look 1")
+        agent_host.sendCommand("setPitch 0")
         time.sleep(sleep_time)
 
 def make_move(r_move,agent_host):
@@ -305,7 +300,7 @@ def get_mission_xml():
                         </Inventory>
                     </AgentStart>
                     <AgentHandlers>
-                        <ContinuousMovementCommands />
+                        <DiscreteMovementCommands/>
                         <ChatCommands />
                         <InventoryCommands />
                         <ObservationFromFullStats/>
@@ -340,6 +335,7 @@ def single_world():
     # Get the mission XML and create a mission
     mission_xml = get_mission_xml()
     mission = MalmoPython.MissionSpec(mission_xml, True)
+    mission.allowAllAbsoluteMovementCommands()
     mission_record = MalmoPython.MissionRecordSpec()
 
     # Start the mission
@@ -379,13 +375,16 @@ def single_world():
     time.sleep(0.3)
     agent_host.sendCommand("jump 0")
 
-    # pitch(0, agent_host)
-    turn("West", agent_host)
-    quit()
+    # agent_host.sendCommand("setPitch 30")
+
+    # pitch(30, agent_host)
+    # turn("West", agent_host)
     last_move = "N"
+
+    max_step = 200
     while max_step >= 0:
         world_state = agent_host.getWorldState()
-
+        
         if world_state.number_of_observations_since_last_state > 0:
             print(max_step)
             msg = world_state.observations[-1].text
