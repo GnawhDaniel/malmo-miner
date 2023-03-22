@@ -1,6 +1,6 @@
 from keras.models import Model, load_model
 from keras.layers import Dense, Input
-from keras.optimizers import Adam
+from keras.optimizers import Adam, sgd, RMSprop
 from keras import regularizers
 import numpy as np
 import helper, copy
@@ -43,7 +43,7 @@ class Memory:
         return self.states[batch], self.actions[batch], self.rewards[batch], self.new_state[batch], self.terminals[batch] 
 
 class DDQN:
-    def __init__(self, lr, gamma, batch_size, layers=(256, 256), state_size=11, action_size=15, replace_target=5, regularization_strength=0.05):
+    def __init__(self, lr, gamma, batch_size, layers=(256, 256), state_size=11, action_size=15, replace_target=5, regularization_strength=0.05, tau=0.01):
         self.lr = lr
         self.gamma = gamma
         self.layers = layers
@@ -53,6 +53,7 @@ class DDQN:
         self.replace_target = replace_target
         self.counter = 0 # Counter for replace_target
         self.regularization_strength = regularization_strength
+        self.tau = tau
 
         self.action_space = [i for i in range(self.action_size)]
         # Model
@@ -75,8 +76,12 @@ class DDQN:
                        kernel_regularizer=regularizers.l1(self.regularization_strength))(h)
 
         model = Model(inputs=state_input, outputs=output)
-        adam = Adam(self.lr)
-        model.compile(loss="mse", optimizer=adam)
+        opt = Adam(self.lr)
+        # opt = sgd(self.lr)
+        # opt = RMSprop(self.lr)
+        # model.compile(loss="mse", optimizer=adam)
+        model.compile(loss="mse", optimizer=opt)
+
 
         return model
     
@@ -143,7 +148,8 @@ class DDQN:
 
             batch_index = np.arange(self.batch_size, dtype=np.int32) if not single else np.array([0])
 
-            q_target[batch_index, action_indices] = reward + (self.gamma * q_next[batch_index, max_actions.astype(int)] * np.invert(done))
+            #UPDATE FUNCTION
+            q_target[batch_index, action_indices] = reward + (self.gamma * q_next[batch_index, max_actions.astype(int)]) #  * np.invert(done)
             
             self.q_eval.fit(state, q_target, verbose=0)
             # print(self.q_eval.layers[1].weights)
@@ -161,7 +167,8 @@ class DDQN:
     
     
     def update_parameters(self):
-        self.q_target.set_weights(self.q_eval.get_weights())
+        self.q_target.set_weights(self.tau*np.array(self.q_eval.get_weights(), dtype=object) + (1-self.tau)*np.array(self.q_target.get_weights(), dtype=object))
+        
 
     def save_model(self, filename):
         self.q_eval.save(filename)
