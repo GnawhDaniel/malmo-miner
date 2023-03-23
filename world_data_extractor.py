@@ -49,7 +49,7 @@ def run():
               
                     <ServerSection>
                     <ServerHandlers>
-                        <DefaultWorldGenerator seed="103660794"/>
+                        <DefaultWorldGenerator seed="20233"/>
                         <ServerQuitWhenAnyAgentFinishes/>
                     </ServerHandlers>
                     </ServerSection>
@@ -77,6 +77,7 @@ def run():
     # Create default Malmo objects:
 
     agent_host = MalmoPython.AgentHost()
+    
     try:
         agent_host.parse( sys.argv )
     except RuntimeError as e:
@@ -88,7 +89,9 @@ def run():
         exit(0)
 
     my_mission = MalmoPython.MissionSpec(missionXML, True)
+    my_mission.allowAllAbsoluteMovementCommands()
     my_mission_record = MalmoPython.MissionRecordSpec()
+
 
     # Attempt to start a mission:
     max_retries = 3
@@ -108,6 +111,7 @@ def run():
 
     world_state = agent_host.getWorldState()
 
+    time.sleep(2)
     while not world_state.has_mission_begun:
         print(".", end="")
         time.sleep(0.1)
@@ -117,6 +121,10 @@ def run():
 
     print()
     print("Mission running ", end=' ')
+
+    agent_host.sendCommand("jump 1")
+    time.sleep(1)
+    agent_host.sendCommand("jump 0")
 
     agent_host.sendCommand("pitch 1")
     time.sleep(3)

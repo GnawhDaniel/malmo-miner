@@ -6,7 +6,7 @@ layers = (64, 256, 128, 64)
 heuristic_factor = 1.5
 straight_line_reward = 3
 regularization: 0.001
-batch_size 50000
+batch_size 3000
 mem_size: 1000000
 target_reward: 400
 reward_table: {'diamond_ore': 500, 'emerald_ore': 50, 'redstone_ore': 20, 'lapis_ore': 10, 'gold_ore': 30, 'iron_ore': 50, 'coal_ore': 50}

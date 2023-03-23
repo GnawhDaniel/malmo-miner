@@ -38,7 +38,7 @@ class Simulation_deep_q(Simulation):
         possible_moves = self.agent.get_possible_moves(state)
         
         #EPSILON
-        save_state = copy.deepcopy(state) # TODO: uncomment
+        # save_state = copy.deepcopy(state) # TODO: uncomment
         if (random.random() < epsilon):
             self.last_move = possible_moves[random.randint(0, len(possible_moves)-1)]
             return self.last_move
@@ -63,7 +63,7 @@ class Simulation_deep_q(Simulation):
                     if epsilon == 0:
                         """Debug"""
                         # print(dqn.q_eval.layers[1].weights)
-                        print(ALL_MOVES[action], save_state[-1], end= ", ")
+                        # print(ALL_MOVES[action], save_state)
                         #  save_state, self.closest_diamond
 
                         # myfunc_vec = np.vectorize(lambda x: ACTION_MAP[x].astype(int))
@@ -152,7 +152,7 @@ if __name__ == "__main__":
     lr = 0.007
     gamma = 0.95 # 0.95
     layers = (64, 256, 128,64)
-    batch_size = 50_000
+    batch_size = 3_000
     replace_target = 4
     regularization_strength = 0.001
     memory_size = 1_000_000
@@ -322,11 +322,10 @@ if __name__ == "__main__":
 
                     training_counter += 1
    
-                    if reward_cumul > best_poicy:
-                        filename = f"{file_directory}/gen NN at " + str(training_counter) + " trainings.h5"
-                        ddqn.save_model(filename)
-                        best_poicy = reward_cumul
-                        print("Saved")
+                    filename = f"{file_directory}/gen NN at " + str(training_counter) + " trainings.h5"
+                    ddqn.save_model(filename)
+                    best_poicy = reward_cumul
+                    print("Saved")
             
 
                     ax.relim()
