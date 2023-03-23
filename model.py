@@ -1,9 +1,12 @@
 from keras.models import Model, load_model
 from keras.layers import Dense, Input
-from keras.optimizers import Adam, sgd, RMSprop
+from keras.optimizers import Adam
 from keras import regularizers
 import numpy as np
 import helper, copy
+import tensorflow as tf
+from keras.layers.advanced_activations import PReLU
+
 
 
 class Memory:
@@ -67,11 +70,13 @@ class DDQN:
 
     def create_NN(self):
         state_input = Input(shape=(self.state_size,))  
-        h = Dense(self.layers[0], activation='tanh')(state_input) # TODO: Consider input shape size for batch training
-
+        # h = Dense(self.layers[0], activation='tanh')(state_input) 
+        h = Dense(self.layers[0])(state_input)
+        h = PReLU()(h)
         for layer in self.layers[1:]:
-            h = Dense(layer, activation='tanh')(h)
-        
+            # h = Dense(layer, activation='tanh')(h)
+            h = Dense(layer)(h)
+            h = PReLU()(h)
         output = Dense(self.action_size, activation="linear", \
                        kernel_regularizer=regularizers.l1(self.regularization_strength))(h)
 
@@ -147,7 +152,7 @@ class DDQN:
             q_target = q_pred
 
             batch_index = np.arange(self.batch_size, dtype=np.int32) if not single else np.array([0])
-
+        
             # UPDATE FUNCTION
             q_target[batch_index, action_indices] = reward + (self.gamma * q_next[batch_index, max_actions.astype(int)]) #  * np.invert(done)
             

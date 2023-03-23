@@ -10,13 +10,13 @@ from keras.utils import to_categorical
 
 
 REWARD_TABLE = {
-    "diamond_ore": 500,
-    "emerald_ore": 50,
-    "redstone_ore": 20,
-    "lapis_ore": 10, 
-    "gold_ore": 30,
-    "iron_ore": 50,
-    "coal_ore": 50,
+    "diamond_ore": 2000,
+    "emerald_ore": 10,
+    "redstone_ore": 15,
+    "lapis_ore": 15, 
+    "gold_ore": 45,
+    "iron_ore": 45,
+    "coal_ore": 30,
 }
 EXCLUSION = {"air", "lava", "flowing_lava", "water", "flowing_water", "bedrock"}.union(set(REWARD_TABLE.keys()))
 DEATH_VALUE = -1000

@@ -164,7 +164,7 @@ def get_mission_xml():
 
                     <ServerSection>
                     <ServerHandlers>
-                        <FlatWorldGenerator generatorString="3;7,5*1,2*56,3*1,3,2;1;"/>
+                        <DefaultWorldGenerator seed="103660794"/>
                         <ServerQuitWhenAnyAgentFinishes/>
                     </ServerHandlers>
                     </ServerSection>
@@ -206,7 +206,7 @@ def single_world():
 
     # Initialize GetPolicy class
     ddqn = DDQN(layers=(64,256,128,128,64))        # TODO: Load ddqn network  
-    ddqn.load_model(filename="C:\\Users\\danie\\Desktop\\weights_save_random\\gen NN at 24 trainings.h5")
+    ddqn.load_model(filename="C:\\Users\\danie\\Desktop\\DIAMOND_NN_280.h5")
     best_policy = BestPolicy(ddqn)
 
     # Get the mission XML and create a mission
@@ -258,7 +258,7 @@ def single_world():
     # turn("West", agent_host)
     last_move = "N"
 
-    max_step = 200
+    max_step = 500
     while max_step >= 0:
         world_state = agent_host.getWorldState()
         
