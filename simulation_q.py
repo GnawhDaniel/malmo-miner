@@ -14,7 +14,7 @@ class Agent:
     NOT_MINEABLE = helper.NOT_MINEABLE
     EXCLUSION = NOT_MINEABLE.union(set(REWARD_TABLE.keys()))
     DEATH_VALUE = -300
-    MOVE_PENALTY = -0.035
+    MOVE_PENALTY = 0
 
     def __init__(self, x, y, z) -> None:
         self.x, self.height, self.z = x, y, z

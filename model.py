@@ -58,7 +58,8 @@ class DDQN:
         self.regularization_strength = regularization_strength
         self.tau = tau
 
-        self.action_space = [i for i in range(self.action_size)]
+        # self.action_space = [i for i in range(self.action_size)]
+
         # Model
         self.q_eval = self.create_NN()
         # Target
@@ -78,7 +79,7 @@ class DDQN:
             h = Dense(layer)(h)
             h = PReLU()(h)
         output = Dense(self.action_size, activation="linear", \
-                       kernel_regularizer=regularizers.l1(self.regularization_strength))(h)
+                       kernel_regularizer=regularizers.l2(self.regularization_strength))(h)
 
         model = Model(inputs=state_input, outputs=output)
         opt = Adam(self.lr)
@@ -93,18 +94,9 @@ class DDQN:
     def train(self, memory, ACTION_MAP, BLOCK_MAP, sim, single = False, item=None):
         # self.states[batch], self.actions[batch], self.rewards[batch], self.new_state[batch], self.terminals[batch] 
         if single or memory.counter > self.batch_size:
-            state, action, reward, new_state, done = None, None, None, None, None,
-            if not single:
-                state, action, reward, new_state, done = \
-                    memory.batch(self.batch_size)
-            else:
-                state, action, reward, new_state, done = item
-                state = np.array(state)[np.newaxis, :] 
-                action = np.array([action])[np.newaxis, :] 
-                reward = np.array([reward])[np.newaxis, :] 
-                new_state = np.array(new_state)[np.newaxis, :] 
-                done = np.array([done])[np.newaxis, :] 
-            
+            state, action, reward, new_state, done = \
+                memory.batch(self.batch_size)
+
 
             new_state_copy = copy.deepcopy(new_state)
 
@@ -136,7 +128,7 @@ class DDQN:
             # Choose playable moves, instead max of all possible moves
             # max_actions = np.argmax(q_eval, axis=1) 
             max_actions = []
-            for ind, actions in enumerate(q_eval):
+            for ind, actions in enumerate(q_next):
                 # actions = [a1, a2, ..., a_n]
                 actions = np.flip(np.argsort(actions)) # Sort action weights
                 counter = 0
@@ -151,13 +143,13 @@ class DDQN:
 
             q_target = q_pred
 
-            batch_index = np.arange(self.batch_size, dtype=np.int32) if not single else np.array([0])
+            batch_index = np.arange(self.batch_size, dtype=np.int32) 
         
-            # UPDATE FUNCTION
-            q_target[batch_index, action_indices] = reward + (self.gamma * q_next[batch_index, max_actions.astype(int)]) #  * np.invert(done)
+            # UPDATE FUNCTION (Calculate target q value to fit/perform gradient descent)
+            q_target[batch_index, action_indices] = reward + (self.gamma * q_eval[batch_index, max_actions.astype(int)]) #  * np.invert(done)
             
-            self.q_eval.fit(state, q_target, verbose=0)
-            # print(self.q_eval.layers[1].weights)
+
+            self.q_eval.fit(state, q_target, verbose=0) # Perform gradient descent 
             
             if not single:
                 self.counter += 1

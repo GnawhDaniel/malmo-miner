@@ -151,21 +151,22 @@ if __name__ == "__main__":
     line, = ax.plot([], [], lw=2)
 
     lr = 0.001
-    gamma = 0.99 # 0.95
+    gamma = 0.5 # 0.95
     layers = (64,256,256,64)
-    batch_size = 1024
-    replace_target = 5
+    batch_size = 3000
+    replace_target = 10
     regularization_strength = 0.001
     memory_size = 1_000_000
-    tau = 0.005
+    tau = 0.001
     
     epsilon = 0.99
     epsilon_min=0.1
     epsilon_dec=0.976
 
 
-    target_reward = 500
-    heuristic_factor = 50
+    target_reward = 0 # To change epsilon
+
+    heuristic_factor = 5
     straight_line_reward = 10
 
 
@@ -272,10 +273,10 @@ if __name__ == "__main__":
                     #     print("New Min:", heuristic_diamond)
                     #     low_diamond = heuristic_diamond
 
-                    #diamond heuristic
-                    # d_h = reward == 0
-                    # if d_h: # So other ores aren't weighted negatively
-                    #     reward += heuristic_diamond
+                    # diamond heuristic
+                    d_h = reward == 0
+                    if d_h: # So other ores aren't weighted negatively
+                        reward += heuristic_diamond
 
                     # Straight line heuristic
                     s_l_r = action[0] != 'M' and state[10] == action and action != "U"
@@ -351,37 +352,34 @@ if __name__ == "__main__":
 
                         
                
-            # # Decrease epsilon every training
-            # epsilon *= epsilon_dec
-            # if epsilon < epsilon_min:
-            #     epsilon = epsilon_min
-            policy_history.append(reward_cumul)
-            # Adjusting Epsilon based on Rewards
-            if len(policy_history) >= 200: #Update every 5 x 100 episodes
+                # # Decrease epsilon every training
+                # epsilon *= epsilon_dec
+                # if epsilon < epsilon_min:
+                #     epsilon = epsilon_min
+                policy_history.append(reward_cumul)
+                # Adjusting Epsilon based on Rewards
+                if len(policy_history) >= 100: #Update every 5 x 100 episodes
 
-                # Rolling average
-                avg = sum(policy_history) / len(policy_history) 
-                print("Rolling Avg:", avg)
-            
-                # If rolling average is greater than some eps threshold, decrease eps
-                if avg > target_reward:
-                    print("Decrease")
-                    epsilon *= 0.3
-                else:
-                    # Else increase epsilon
-                    print("Increase")
-                    epsilon *= 1.7
-                policy_history.clear()
-            else:
-                # Decrease epsilon 
-                epsilon *= epsilon_dec
-                if epsilon < epsilon_min:
-                    epsilon = epsilon_min
-    
-            if epsilon > .99:
-                epsilon = .99
-            elif epsilon < epsilon_min:
-                epsilon = epsilon_min
+                    # Rolling average
+                    avg = sum(policy_history) / len(policy_history) 
+                    print("Rolling Avg:", avg)
+                
+                    # If rolling average is greater than some eps threshold, decrease eps
+                    if avg > target_reward:
+                        print("Decrease")
+                        epsilon *= 0.5
+                    else:
+                        # Else increase epsilon
+                        print("Increase")
+                        epsilon *= 1.5
+                    policy_history.clear()
 
-            print(epsilon)
+                    if epsilon > .99:
+                        epsilon = .99
+                    elif epsilon < epsilon_min:
+                        epsilon = epsilon_min
+
+                    print("epsilon:", epsilon)
+        
+
             
