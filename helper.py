@@ -70,38 +70,6 @@ def get_grid_observation(world_state, name):
     return None, None
 
 
-# def onehotencode():
-#     # TODO: Change this implementation to One Hot Encoding
-#     '''
-#     with open("all_mc_blocks.txt", 'r') as f:
-#         string = f.read().strip()
-#         block_list = string.split(",")
-        
-#     '''
-    
-#     block_list = ["stone", "air", "bedrock"]
-        
-#     for block in REWARD_TABLE.keys():
-#         block_list += block
-#         block_list += "air+" + block
-    
-#     BLOCK_MAP = {}
-#     ACTION_MAP = {}
-
-#     actions = ["N","S","W","E","U","M_NL", "M_NU", "M_EL", "M_EU", "M_SL", "M_SU", "M_WL", "M_WU", "M_U", "M_D"]
-
-#     #ONE HOT
-#     block_code = to_categorical([i for i in range(len(block_list))])
-#     action_code = to_categorical([i for i in range(len(actions))])
-
-#     for i in range(len(block_list)):
-#         BLOCK_MAP[block_list[i]] = block_code[i]
-    
-#     for i in range(len(actions)):
-#         ACTION_MAP[actions[i]] = action_code[i]
-
-#     return ACTION_MAP, BLOCK_MAP
-
 def enumerate_one_hot():
     block_list = ["stone", "air", "bedrock" , "lava", "flowing_lava", "water", "flowing_water", "air+ore"]
         
@@ -126,8 +94,3 @@ def enumerate_one_hot():
 
     return BLOCK_MAP, ACTION_MAP
 
-
-
-if __name__ == "__main__":
-    #onehotencode()
-    pass

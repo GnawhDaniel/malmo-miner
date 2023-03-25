@@ -74,7 +74,7 @@ class BestPolicy:
                 moves.append(M[i])
         return moves
 
-def get_current_state(y,x,z, height, last_move, terrain_data) -> "state":
+def get_current_state(y,x,z, height, last_move, terrain_data):
     """
     The x-axis indicates the player's distance east (positive)  or west (negative) of the origin point—i.e., the longitude,
     The z-axis indicates the player's distance south (positive) or north (negative) of the origin point—i.e., the latitude
