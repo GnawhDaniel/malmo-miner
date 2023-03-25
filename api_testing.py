@@ -12,7 +12,7 @@ from model import DDQN
 #change N/S, check wheter E/w is correct
 def move(r_move, agent_host):
     
-    sleep_time = 1 
+    sleep_time = 0.5
     if r_move == "U":
         agent_host.sendCommand("jump")
         agent_host.sendCommand("jump")
@@ -183,8 +183,8 @@ def get_mission_xml():
                         <ObservationFromFullStats/>
                         <ObservationFromGrid>
                             <Grid name="state_space_box">
-                                <min x="-6" y="-1" z="-6"/>
-                                <max x="6" y="6" z="6"/>
+                                <min x="-8" y="-1" z="-8"/>
+                                <max x="8" y="8" z="8"/>
                             </Grid>
                         </ObservationFromGrid>
                     </AgentHandlers>
@@ -206,7 +206,8 @@ def single_world():
 
     # Initialize GetPolicy class
     ddqn = DDQN(layers=(64,256,128,128,64))        # TODO: Load ddqn network  
-    ddqn.load_model(filename="C:\\Users\\danie\\Desktop\\ores44_NN_220.h5")
+
+    ddqn.load_model(filename="C:\\Users\\danie\\Desktop\\supergood_DIAMOND_NN_4000.h5")
     best_policy = BestPolicy(ddqn)
 
     # Get the mission XML and create a mission
@@ -241,10 +242,10 @@ def single_world():
 
 
     x = y = z = 0
-    min_x = min_z = -6
-    max_x = max_z = 6
+    min_x = min_z = -8
+    max_x = max_z = 8
     min_y = -1
-    max_y = 6
+    max_y = 8
     # S
     #W  E
     # N
@@ -277,16 +278,19 @@ def single_world():
             #print(terrain_data)
             # print(get_current_state(1,5,5,agent_y,terrain_data))
 
-            state = get_current_state(y=1, x=6, z=6, last_move=last_move, height=agent_y, terrain_data=terrain_data)
+            state = get_current_state(y=1, x=8, z=8, last_move=last_move, height=agent_y, terrain_data=terrain_data)
             #update last move
             last_move = state[10]
 
+            
             # Choose move
-            chosen_move = best_policy.choose_move(state=state)
+            chosen_move = best_policy.choose_move(state)  #.choose_move(state=state)
             agent_host.sendCommand(f'chat {max_step} {chosen_move}')
-            # Move agent
+            
+            # input()
 
-            make_move(chosen_move, agent_host)
+            # Move agent
+            make_move(chosen_move, agent_host) # TODO: uncomment this
 
             max_step -= 1
 

@@ -1,5 +1,5 @@
 from simulation_q import Simulation, Agent
-import world_data_extractor
+# import world_data_extractor
 from helper import pickilizer, unpickle
 import helper
 import random, numpy as np
@@ -30,7 +30,6 @@ HEIGHT_MOD = 1
 
 #ONE HOT ENCODING
 BLOCK_MAP, ACTION_MAP = helper.enumerate_one_hot()
-ALL_MOVES = ["N","S","W","E","U","M_NL", "M_NU", "M_EL", "M_EU", "M_SL", "M_SU", "M_WL", "M_WU", "M_U", "M_D"]
 
 
 class Simulation_deep_q(Simulation):
@@ -39,6 +38,7 @@ class Simulation_deep_q(Simulation):
         
         #EPSILON
         # save_state = copy.deepcopy(state) # TODO: uncomment
+
         if (random.random() < epsilon):
             self.last_move = possible_moves[random.randint(0, len(possible_moves)-1)]
             return self.last_move
@@ -59,11 +59,11 @@ class Simulation_deep_q(Simulation):
 
             #choose best move only if move is possible in current state
             for action in sorted_actions:
-                if ALL_MOVES[action] in possible_moves:
+                if helper.ALL_MOVES[action] in possible_moves:
                     if epsilon == 0:
                         """Debug"""
                         # print(dqn.q_eval.layers[1].weights)
-                        # print(ALL_MOVES[action], save_state)
+                        print(helper.ALL_MOVES[action], end= ", ")
                         #  save_state, self.closest_diamond
 
                         # myfunc_vec = np.vectorize(lambda x: ACTION_MAP[x].astype(int))
@@ -76,10 +76,10 @@ class Simulation_deep_q(Simulation):
                         # print(action)
                         pass
 
-                    self.last_move = ALL_MOVES[action]
+                    self.last_move = helper.ALL_MOVES[action]
                     return self.last_move
-            
-            raise 
+        print(state)
+        raise 
     
     def calculate_diamond_locations(self): 
         diamonds = []
@@ -135,43 +135,47 @@ class Simulation_deep_q(Simulation):
 
 
         new_distance = np.linalg.norm(updated_move - self.closest_diamond)
-
         value = (best_dist - new_distance) * multiplier
+        # print(best_dist - new_distance, best_dist, new_distance)
 
         return value
 
 
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
+    # tf.debugging.set_log_device_placement(True)
+
     # tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
     plt.ion()
     fig, ax = plt.subplots()
     # ax.set_ylim(0, 20)
     line, = ax.plot([], [], lw=2)
 
-    lr = 0.007
-    gamma = 0.95 # 0.95
-    layers = (64, 256, 128,64)
-    batch_size = 3_000
-    replace_target = 4
+    lr = 0.001
+    gamma = 0.5 # 0.95
+    layers = (64,256,256,64)
+    batch_size = 3000
+    replace_target = 10
     regularization_strength = 0.001
     memory_size = 1_000_000
-    
+    tau = 0.001
     
     epsilon = 0.99
     epsilon_min=0.1
     epsilon_dec=0.976
 
 
-    target_reward = 400
-    heuristic_factor = 1.5
-    straight_line_reward = 3
+    target_reward = 0 # To change epsilon
+
+    heuristic_factor = 5
+    straight_line_reward = 10
 
 
-    ddqn = DDQN(lr, gamma, batch_size=batch_size, layers=layers, state_size=12, action_size=15, replace_target=replace_target, regularization_strength=regularization_strength)
+    ddqn = DDQN(lr, gamma, batch_size=batch_size, layers=layers, state_size=12, action_size=15, replace_target=replace_target, regularization_strength=regularization_strength, tau=tau)
     memory = Memory(memory_size, state_size=12)
+    # ddqn.load_model("C:\\Users\\danie\\Desktop\\DIAMOND_NN_280.h5")
 
-    episodes_per_training = 100
+    episodes_per_training = 20
     trainings_per_world = 100
     num_worlds = 10
 
@@ -259,6 +263,7 @@ if __name__ == "__main__":
                     heuristic_diamond = sim.diamond_heuristic(action, heuristic_factor)
                     
                     reward, dead = sim.get_reward(state, action)
+             
                     new_state = sim.get_current_state()
 
                     
@@ -269,7 +274,7 @@ if __name__ == "__main__":
                     #     print("New Min:", heuristic_diamond)
                     #     low_diamond = heuristic_diamond
 
-                    #diamond heuristic
+                    # diamond heuristic
                     d_h = reward == 0
                     if d_h: # So other ores aren't weighted negatively
                         reward += heuristic_diamond
@@ -279,10 +284,7 @@ if __name__ == "__main__":
                     if s_l_r:
                        reward += straight_line_reward
 
-                    # if epsilon == 0:
-                        # print(reward, heuristic_diamond * d_h, straight_line_reward * s_l_r)
-                        # print(sim.agent_xyz())
-                    reward_cumul += reward
+  
      
                     reward_sum += reward
                     if reward > best_reward:
@@ -291,14 +293,15 @@ if __name__ == "__main__":
                     #adjust height
                     state[-1] = state[-1] // HEIGHT_MOD
                     new_state[-1] = new_state[-1] // HEIGHT_MOD
-                    
+
                     done = dead or step == steps_per_simulation - 1
                     memory.store((state, action, reward, new_state, done))
 
-                    if dead:
+                    reward_cumul += reward
+                    
+                    if dead is True:
+                        print("Died")
                         break
-
-                policy_history.append(reward_cumul)
 
                 diamonds_found = sim.agent.inventory["diamond_ore"]
                 diamonds_sum += diamonds_found
@@ -310,87 +313,74 @@ if __name__ == "__main__":
                 if print_statistics:
                     print()
                     print("Episode:", episode_counter)
-                    print("\tMost diamonds found (per 100 episode):", best_diamonds)
+                    print(f"\tMost diamonds found (per {episodes_per_training} episode):", best_diamonds)
                     print("\tAverage diamonds mined:", diamonds_sum / episodes_per_training)
                     print("\tBest diamond policy (ep=0): ", diamonds_found)
                     print("\tAverage Reward:", reward_sum/episodes_per_training)
-                    print("\tBest Reward (per 100 episodes):", best_reward)
+                    print(f"\tBest Reward (per {episodes_per_training} episodes):", best_reward)
                     print("\tCumulative Reward Policy (ep=0):", reward_cumul)
                     print("\tInventory: ", sim.agent.inventory)
                     epsilon = stored_epsilon
-                    line.set_data(np.append(line.get_xdata(), episode_counter), np.append(line.get_ydata(), reward_cumul))
-
                     training_counter += 1
-   
-                    filename = f"{file_directory}/gen NN at " + str(training_counter) + " trainings.h5"
-                    ddqn.save_model(filename)
-                    best_poicy = reward_cumul
-                    print("Saved")
-            
+
+                    ores = sum(sim.agent.inventory.values())-sim.agent.inventory["stone"]
+                    line.set_data(np.append(line.get_xdata(), episode_counter), np.append(line.get_ydata(), reward_cumul))
+                    if sim.agent.inventory["diamond_ore"] > 0:
+                        filename = f"{file_directory}/DIAMOND_NN_{episode_counter}.h5"
+                        ddqn.save_model(filename)
+                        print("Saved")  
+                    elif ores > 5:
+                        filename = f"{file_directory}/ores{ores}_NN_{episode_counter}.h5"
+                        ddqn.save_model(filename)
+                        best_poicy = reward_cumul
+                        print("Saved")
+                    if reward_cumul > best_poicy:
+                        filename = f"{file_directory}/NN_{episode_counter}.h5"
+                        ddqn.save_model(filename)
+                        best_poicy = reward_cumul
+                        print("Saved")
 
                     ax.relim()
                     ax.autoscale_view()
                     plt.draw()
-                    # plt.pause(0.001)
-                    # if len(line.get_xdata()) > 50:
-                    #     line.set_data(line.get_xdata()[1:], line.get_ydata()[1:])
+      
                     fig.canvas.draw()
                     fig.canvas.flush_events()
 
+                # TRAIN
+                # print("Episode:", episode_counter)
+                ddqn.train(memory, ACTION_MAP, BLOCK_MAP, sim)
+
                         
-            # #TRAIN
-            print("Episode:", episode_counter)
-            print("Training...")
-            ddqn.train(memory, ACTION_MAP, BLOCK_MAP, sim)
+               
+                # # Decrease epsilon every training
+                # epsilon *= epsilon_dec
+                # if epsilon < epsilon_min:
+                #     epsilon = epsilon_min
+                policy_history.append(reward_cumul)
+                # Adjusting Epsilon based on Rewards
+                if len(policy_history) >= 100: #Update every 5 x 100 episodes
 
-            # Decrease epsilon every training
-            epsilon *= epsilon_dec
-            if epsilon < epsilon_min:
-                epsilon = epsilon_min
-
-      
-            # # Adjusting Epsilon based on Rewards
-            # if len(policy_history) >= 500: #Update every 5 x 100 episodes
-
-            #     # Rolling average
-            #     avg = sum(policy_history) / len(policy_history) 
-            #     print("Rolling Avg:", avg)
-            
-            #     # If rolling average is greater than some eps threshold, decrease eps
-            #     if avg > target_reward:
-            #         print("Decrease")
-            #         epsilon *= 0.4
-            #     else:
-            #         # Else increase epsilon
-            #         print("Increase")
-            #         epsilon *= 1.2
-            #     policy_history.clear()
-            # else:
-            #     # Decrease epsilon 
-            #     epsilon *= epsilon_dec
-            #     if epsilon < epsilon_min:
-            #         epsilon = epsilon_min
-    
-            if epsilon > .99:
-                epsilon = .99
-            elif epsilon < epsilon_min:
-                epsilon = epsilon_min
-
-            print(epsilon)
-
-            '''
-            #store network every n trainings
-            if training_counter % trainings_per_save:
-                filename = "NN at " + str(training_counter) + " trainings.h5"
-                #ddqn.save(filename)
+                    # Rolling average
+                    avg = sum(policy_history) / len(policy_history) 
+                    print("Rolling Avg:", avg)
                 
-            '''
-            
-            
+                    # If rolling average is greater than some eps threshold, decrease eps
+                    if avg > target_reward:
+                        print("Decrease")
+                        epsilon *= 0.5
+                    else:
+                        # Else increase epsilon
+                        print("Increase")
+                        epsilon *= 1.5
+                    policy_history.clear()
 
+                    if epsilon > .99:
+                        epsilon = .99
+                    elif epsilon < epsilon_min:
+                        epsilon = epsilon_min
 
-"""
-Ideas/TODO:
-Increase tau as rewards increase
-Scale reward weights (including heuristic)
-"""
+                    print("epsilon:", epsilon)
+        
+
+            

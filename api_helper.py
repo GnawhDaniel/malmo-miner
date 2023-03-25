@@ -2,6 +2,7 @@ from helper import REWARD_TABLE, EXCLUSION
 import helper
 import numpy as np
 import random
+from operator import add
 
 HEIGHT_MOD = 1
 
@@ -73,7 +74,7 @@ class BestPolicy:
                 moves.append(M[i])
         return moves
 
-def get_current_state(y,x,z,height, last_move, terrain_data) -> "state":
+def get_current_state(y,x,z, height, last_move, terrain_data) -> "state":
     """
     The x-axis indicates the player's distance east (positive)  or west (negative) of the origin point—i.e., the longitude,
     The z-axis indicates the player's distance south (positive) or north (negative) of the origin point—i.e., the latitude
@@ -82,256 +83,90 @@ def get_current_state(y,x,z,height, last_move, terrain_data) -> "state":
     '''
     (NL, NU, EL, EU, SL, SU, WL, WU, U, D, height)
     '''
-    # X, Z
-    # dir = [(0, 1), (1, 0), (0, -1), (-1, 0)]
-    dir = [(0, -1), (1, 0), (0, 1), (-1, 0)]
-    state_space = []
     # Searching Range
-    r_distance = 6
-    #  S
-    # W  E
-    #  N
-    # X=5, Y = 1 , Z = 1
+    r_distance = 5
+    state_space = []
+    #N E S W
+    dir = [(-1, 0), (0, 1), (1, 0), (0, -1)] # (x, z)
 
-    #North lower
-    if terrain_data[y,x-1,z] != "air":
-        state_space.append(terrain_data[y,x-1,z])
-    else:
-        temp_x = x
-        temp_see = []
-        for i in range(r_distance):
-            temp_x -= 1
+    
+    def recursive_search(coordinate, direction, search_depth, terrain_data):
+        '''
+        recursively finds max value block
+        returns str: 'max_value_block'
+        '''
 
-            if terrain_data[y,temp_x,z] != "air":
-                temp_see.append(terrain_data[y,temp_x,z])
+        coordinate = tuple(coordinate)
+        # base cases:
+        # Search depth exceeded
+        if search_depth <= 0:
+            return "air"
+        
+        if terrain_data[coordinate] != "air":
+            return "air"
+
+        # possible search directions
+        directions = [
+            (1, 0, 0),
+            (0, 1, 0),
+            (0, 0, 1),
+            (-1, 0, 0),
+            (0, -1, 0),
+            (0, 0, -1)
+        ]
+
+        # blocks found in the local search
+        blocks = []
+
+        # if a direction has a 0 where the direction is non-zero, we want to look in that direction (perpendicular)
+        index_of_non_zero = 0
+        for i in range(len(coordinate)):
+            if coordinate[i] != 0:
+                index_of_non_zero = i
                 break
+
+        for dir in directions:
+            if dir[index_of_non_zero] == 0 or dir == direction:
+                c = tuple(map(add, coordinate, dir))  # Adding tuples into each other
+                blocks.append(terrain_data[c])
+
+        for i in blocks:
+            if (i in REWARD_TABLE):
+                return "diamond_ore"
+
+        # find max of other blocks recursively
+        max_recurred = recursive_search(map(add, coordinate, direction), direction, search_depth - 1, terrain_data)
+
+        return max_recurred
+
+
+    for direction in dir:
+        for y_ in [y, y+1]:
+            if terrain_data[y_,x + direction[0],z + direction[1]] != "air":
+                state_space.append(terrain_data[y_,x + direction[0],z + direction[1]])
             else:
-                #print(terrain_data[y + 1,temp_x, z])
-                temp_see.append(terrain_data[y + 1,temp_x, z])
-                #print(terrain_data[y - 1, temp_x, z])
-                temp_see.append(terrain_data[y - 1, temp_x, z])
-                temp_see.append(terrain_data[y, temp_x, z+1])
-                temp_see.append(terrain_data[y, temp_x, z-1])
-        block = "air"
-        #print(temp_see)
-        for i in REWARD_TABLE:
-            if i in temp_see:
-                block += "+ore"
-                break
- 
+                block_found = recursive_search((y_,x + direction[0],z + direction[1]), (0, direction[0], direction[1]), r_distance, terrain_data)
+                        
+                block = "air"
+                #print(temp_see)
+                if block_found in REWARD_TABLE:
+                    block += "+ore"
+            
+                state_space.append(block)
 
-        state_space.append(block)
-
-    # North upper
-    y+=1
-    if terrain_data[y, x - 1, z] != "air":
-        state_space.append(terrain_data[y, x - 1, z])
-    else:
-        temp_x = x
-        temp_see = []
-        for i in range(r_distance):
-            temp_x -= 1
-            if terrain_data[y, temp_x, z] != "air":
-                temp_see.append(terrain_data[y, temp_x, z])
-                break
-            else:
-                temp_see.append(terrain_data[y + 1, temp_x, z])
-                temp_see.append(terrain_data[y - 1, temp_x, z])
-                temp_see.append(terrain_data[y, temp_x, z + 1])
-                temp_see.append(terrain_data[y, temp_x, z - 1])
-        block = "air"
-        for i in REWARD_TABLE:
-            if i in temp_see:
-                block += "+ore"
-                break
-
-
-        state_space.append(block)
-    y-=1
-
-    # East lower
-    if terrain_data[y, x, z + 1] != "air":
-        state_space.append(terrain_data[y, x, z + 1])
-    else:
-        temp_z = z
-        temp_see = []
-        for i in range(r_distance):
-            temp_z += 1
-            if terrain_data[y, x, temp_z] != "air":
-                temp_see.append(terrain_data[y, x, temp_z])
-                break
-            else:
-                temp_see.append(terrain_data[y + 1, x, temp_z])
-                temp_see.append(terrain_data[y - 1, x, temp_z])
-                temp_see.append(terrain_data[y, x + 1, temp_z])
-                temp_see.append(terrain_data[y, x - 1, temp_z])
-        block = "air"
-        for i in REWARD_TABLE:
-            if i in temp_see:
-                block += "+ore"
-                break
-
-
-        state_space.append(block)
-
-    # East upper
-    y += 1
-    if terrain_data[y, x, z + 1] != "air":
-        state_space.append(terrain_data[y, x, z + 1])
-    else:
-        temp_z = z
-        temp_see = []
-        for i in range(r_distance):
-            temp_z += 1
-            if terrain_data[y, x, temp_z] != "air":
-                temp_see.append(terrain_data[y, x, temp_z])
-                break
-            else:
-                temp_see.append(terrain_data[y + 1, x, temp_z])
-                temp_see.append(terrain_data[y - 1, x, temp_z])
-                temp_see.append(terrain_data[y, x + 1, temp_z])
-                temp_see.append(terrain_data[y, x - 1, temp_z])
-        block = "air"
-        for i in REWARD_TABLE:
-            if i in temp_see:
-                block += "+ore"
-                break
-
-        state_space.append(block)
-    y -= 1
-
-    # South lower
-    if terrain_data[y, x + 1, z] != "air":
-        state_space.append(terrain_data[y, x + 1, z])
-    else:
-        temp_x = x
-        temp_see = []
-        for i in range(r_distance):
-            temp_x += 1
-            if terrain_data[y, temp_x, z] != "air":
-                temp_see.append(terrain_data[y, temp_x, z])
-                break
-            else:
-                temp_see.append(terrain_data[y + 1, temp_x, z])
-                temp_see.append(terrain_data[y - 1, temp_x, z])
-                temp_see.append(terrain_data[y, temp_x, z + 1])
-                temp_see.append(terrain_data[y, temp_x, z - 1])
-        block = "air"
-        for i in REWARD_TABLE:
-            if i in temp_see:
-                block += "+ore"
-                break
-
-
-        state_space.append(block)
-
-    # South upper
-    y += 1
-    if terrain_data[y, x + 1, z] != "air":
-        state_space.append(terrain_data[y, x + 1, z])
-    else:
-        temp_x = x
-        temp_see = []
-        for i in range(r_distance):
-            temp_x += 1
-            if terrain_data[y, temp_x, z] != "air":
-                temp_see.append(terrain_data[y, temp_x, z])
-                break
-            else:
-                temp_see.append(terrain_data[y + 1, temp_x, z])
-                temp_see.append(terrain_data[y - 1, temp_x, z])
-                temp_see.append(terrain_data[y, temp_x, z + 1])
-                temp_see.append(terrain_data[y, temp_x, z - 1])
-        block = "air"
-        for i in REWARD_TABLE:
-            if i in temp_see:
-                block += "+ore"
-                break
-
-        state_space.append(block)
-    y -= 1
-
-
-
-
-    # West lower
-    if terrain_data[y, x, z - 1] != "air":
-        state_space.append(terrain_data[y, x, z - 1])
-    else:
-        temp_z = z
-        temp_see = []
-        for i in range(r_distance):
-            temp_z -= 1
-            if terrain_data[y, x, temp_z] != "air":
-                temp_see.append(terrain_data[y, x, temp_z])
-                break
-            else:
-                temp_see.append(terrain_data[y + 1, x, temp_z])
-                temp_see.append(terrain_data[y - 1, x, temp_z])
-                temp_see.append(terrain_data[y, x + 1, temp_z])
-                temp_see.append(terrain_data[y, x - 1, temp_z])
-        block = "air"
-        for i in REWARD_TABLE:
-            if i in temp_see:
-                block += "+ore"
-                break
-
-
-        state_space.append(block)
-
-    # West upper
-    y += 1
-    if terrain_data[y, x, z - 1] != "air":
-        state_space.append(terrain_data[y, x, z - 1])
-    else:
-        temp_z = z
-        temp_see = []
-        for i in range(r_distance):
-            temp_z -= 1
-            if terrain_data[y, x, temp_z] != "air":
-                temp_see.append(terrain_data[y, x, temp_z])
-                break
-            else:
-                temp_see.append(terrain_data[y + 1, x, temp_z])
-                temp_see.append(terrain_data[y - 1, x, temp_z])
-                temp_see.append(terrain_data[y, x + 1, temp_z])
-                temp_see.append(terrain_data[y, x - 1, temp_z])
-        block = "air"
-        for i in REWARD_TABLE:
-            if i in temp_see:
-                block += "+ore"
-                break
- 
-
-        state_space.append(block)
-    y -= 1
-
-    #UPPER
+    #UP
     if terrain_data[y+2, x, z] != "air":
         state_space.append(terrain_data[y+2, x, z])
     else:
-        temp_y = y
-        temp_see = []
-        for i in range(r_distance):
-            temp_y += 1
-            if terrain_data[temp_y, x, z] != "air":
-                temp_see.append(terrain_data[temp_y, x, z])
-                break
-            else:
-                temp_see.append(terrain_data[temp_y, x, z+1])
-                temp_see.append(terrain_data[temp_y , x, z-1])
-                temp_see.append(terrain_data[temp_y, x + 1, z])
-                temp_see.append(terrain_data[temp_y, x - 1, z])
+        # coordinate, direction, search_depth, terrain_data
+        block_found = recursive_search((y+2, x, z), (1, 0, 0), r_distance, terrain_data)
+                        
         block = "air"
-        for i in REWARD_TABLE:
-            if i in temp_see:
-                block += "+ore"
-                break
-
-
+        #print(temp_see)
+        if block_found in REWARD_TABLE:
+            block += "+ore"
+    
         state_space.append(block)
-
-
 
     # BELOW
 
