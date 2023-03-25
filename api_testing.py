@@ -206,6 +206,7 @@ def single_world():
 
     # Initialize GetPolicy class
     ddqn = DDQN(layers=(64,256,128,128,64))        # TODO: Load ddqn network  
+
     ddqn.load_model(filename="C:\\Users\\danie\\Desktop\\supergood_DIAMOND_NN_4000.h5")
     best_policy = BestPolicy(ddqn)
 
@@ -290,7 +291,6 @@ def single_world():
 
             # Move agent
             make_move(chosen_move, agent_host) # TODO: uncomment this
-
 
             max_step -= 1
 

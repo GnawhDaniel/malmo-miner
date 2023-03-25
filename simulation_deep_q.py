@@ -38,6 +38,8 @@ class Simulation_deep_q(Simulation):
         save_state = copy.deepcopy(state) # Debug Purposes
         
         #EPSILON
+        # save_state = copy.deepcopy(state) # TODO: uncomment
+
         if (random.random() < epsilon):
             self.last_move = possible_moves[random.randint(0, len(possible_moves)-1)]
             return self.last_move
